@@ -30,27 +30,9 @@
                     <view key="view" contentMode="scaleToFill" id="YEF-9b-1nI">
                         <rect key="frame" x="0.0" y="0.0" width="393" height="852"/>
                         <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
-                        <subviews>
-                            <imageView clipsSubviews="YES" userInteractionEnabled="NO" contentMode="scaleAspectFit" horizontalHuggingPriority="251" verticalHuggingPriority="251" image="Suncity_Logo" translatesAutoresizingMaskIntoConstraints="NO" id="uBA-zx-Ru2">
-                                <rect key="frame" x="76" y="339" width="240" height="128"/>
-                                <constraints>
-                                    <constraint firstAttribute="height" constant="128" id="K1h-zj-yGY"/>
-                                    <constraint firstAttribute="width" constant="240" id="aV8-Nm-Lr7"/>
-                                </constraints>
-                            </imageView>
-                        </subviews>
                         <viewLayoutGuide key="safeArea" id="wcj-J2-J9V"/>
                         <color key="backgroundColor" systemColor="systemBackgroundColor"/>
-                        <constraints>
-                            <constraint firstItem="wcj-J2-J9V" firstAttribute="trailing" secondItem="uBA-zx-Ru2" secondAttribute="trailing" constant="77" id="0vb-Xx-5Bb"/>
-                            <constraint firstItem="wcj-J2-J9V" firstAttribute="bottom" secondItem="uBA-zx-Ru2" secondAttribute="bottom" constant="317" id="LXb-et-kRb"/>
-                            <constraint firstItem="uBA-zx-Ru2" firstAttribute="leading" secondItem="wcj-J2-J9V" secondAttribute="leading" constant="76" id="SR6-5T-nS9"/>
-                            <constraint firstItem="uBA-zx-Ru2" firstAttribute="top" secondItem="wcj-J2-J9V" secondAttribute="top" constant="221" id="f9P-Fz-e1g"/>
-                        </constraints>
                     </view>
-                    <connections>
-                        <outlet property="imageView" destination="uBA-zx-Ru2" id="WBC-WY-21X"/>
-                    </connections>
                 </viewController>
                 <placeholder placeholderIdentifier="IBFirstResponder" id="n6o-DV-UaB" userLabel="First Responder" customClass="UIResponder" sceneMemberID="firstResponder"/>
             </objects>
@@ -58,7 +40,6 @@
         </scene>
     </scenes>
     <resources>
-        <image name="Suncity_Logo" width="137" height="36"/>
         <systemColor name="systemBackgroundColor">
             <color white="1" alpha="1" colorSpace="custom" customColorSpace="genericGamma22GrayColorSpace"/>
         </systemColor>

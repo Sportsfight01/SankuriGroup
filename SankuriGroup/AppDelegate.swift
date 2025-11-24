@@ -2,7 +2,7 @@
 //  AppDelegate.swift
 //  SankuriGroup
 //
-//  Created by Naveen Kourampalli on 21/11/25.
+//  Created by Mohan Kumar on 21/11/25.
 //
 
 import UIKit

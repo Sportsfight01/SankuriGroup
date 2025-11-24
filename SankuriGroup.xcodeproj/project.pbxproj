@@ -11,7 +11,7 @@
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
-		A140B0EC2ED02E3D004119DC /* Exceptions for "SankuriGroup" folder in "SankuriGroup" target */ = {
+		A15CBCBA2ED442F9000E8E14 /* Exceptions for "SankuriGroup" folder in "SankuriGroup" target */ = {
 			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
 			membershipExceptions = (
 				Info.plist,
@@ -21,10 +21,10 @@
 /* End PBXFileSystemSynchronizedBuildFileExceptionSet section */
 
 /* Begin PBXFileSystemSynchronizedRootGroup section */
-		A140B0D92ED02E3B004119DC /* SankuriGroup */ = {
+		A15CBCB12ED442F8000E8E14 /* SankuriGroup */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
 			exceptions = (
-				A140B0EC2ED02E3D004119DC /* Exceptions for "SankuriGroup" folder in "SankuriGroup" target */,
+				A15CBCBA2ED442F9000E8E14 /* Exceptions for "SankuriGroup" folder in "SankuriGroup" target */,
 			);
 			path = SankuriGroup;
 			sourceTree = "<group>";
@@ -45,7 +45,7 @@
 		A140B0CE2ED02E3B004119DC = {
 			isa = PBXGroup;
 			children = (
-				A140B0D92ED02E3B004119DC /* SankuriGroup */,
+				A15CBCB12ED442F8000E8E14 /* SankuriGroup */,
 				A140B0D82ED02E3B004119DC /* Products */,
 			);
 			sourceTree = "<group>";
@@ -74,7 +74,7 @@
 			dependencies = (
 			);
 			fileSystemSynchronizedGroups = (
-				A140B0D92ED02E3B004119DC /* SankuriGroup */,
+				A15CBCB12ED442F8000E8E14 /* SankuriGroup */,
 			);
 			name = SankuriGroup;
 			packageProductDependencies = (
@@ -148,6 +148,7 @@
 				DEVELOPMENT_TEAM = 474BVJ3YQX;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = SankuriGroup/Info.plist;
+				INFOPLIST_KEY_LSApplicationCategoryType = "";
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
 				INFOPLIST_KEY_UILaunchStoryboardName = LaunchScreen;
 				INFOPLIST_KEY_UIMainStoryboardFile = Main;
@@ -176,6 +177,7 @@
 				DEVELOPMENT_TEAM = 474BVJ3YQX;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = SankuriGroup/Info.plist;
+				INFOPLIST_KEY_LSApplicationCategoryType = "";
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
 				INFOPLIST_KEY_UILaunchStoryboardName = LaunchScreen;
 				INFOPLIST_KEY_UIMainStoryboardFile = Main;

@@ -60,6 +60,12 @@ class HomeViewController: UIViewController {
         setupUI()
     }
     
+    override func viewWillAppear(_ animated: Bool) {
+        super.viewWillAppear(animated)
+        navigationController?.setNavigationBarHidden(true, animated: true)
+    }
+
+    
     private func setupUI() {
         view.addSubview(backgroundImageView)
         view.addSubview(estatesContainerView)
@@ -84,18 +90,12 @@ class HomeViewController: UIViewController {
        // estatesContainerView.addSubview(estate2)
         
         NSLayoutConstraint.activate([
-            estate1.leadingAnchor.constraint(equalTo: estatesContainerView.leadingAnchor),
+            estate1.centerXAnchor.constraint(equalTo: estatesContainerView.centerXAnchor),
             estate1.centerYAnchor.constraint(equalTo: estatesContainerView.centerYAnchor),
             estate1.heightAnchor.constraint(equalTo: estatesContainerView.heightAnchor),
-            estate1.widthAnchor.constraint(equalTo: estatesContainerView.widthAnchor, multiplier: 0.45),
-            estate1.centerXAnchor.constraint(equalTo: view.centerXAnchor),
-// remove the above centreXanchor if you have multiple estates
-            
-//            estate2.trailingAnchor.constraint(equalTo: estatesContainerView.trailingAnchor),
-//            estate2.centerYAnchor.constraint(equalTo: estatesContainerView.centerYAnchor),
-//            estate2.heightAnchor.constraint(equalTo: estatesContainerView.heightAnchor),
-//            estate2.widthAnchor.constraint(equalTo: estatesContainerView.widthAnchor, multiplier: 0.45)
+            estate1.widthAnchor.constraint(equalTo: estatesContainerView.widthAnchor, multiplier: 0.45)
         ])
+
     }
     
     // MARK: - Navigation Action
