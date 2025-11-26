@@ -81,7 +81,7 @@ class TimelineCell: UITableViewCell {
         // Colours by status
         switch item.status {
         case .completed:
-            bgView.backgroundColor = UIColor.systemYellow
+            bgView.backgroundColor = AppStyle.Colors.yellow
             titleLabel.textColor = .black
             dateLabel.textColor = .black
             statusImageView.image = UIImage(named: "status_completed")
@@ -94,9 +94,9 @@ class TimelineCell: UITableViewCell {
 
 
         case .pending:
-            bgView.backgroundColor = .white
+            bgView.backgroundColor = AppStyle.Colors.grey
             titleLabel.textColor = .black
-            dateLabel.textColor = .darkGray
+            dateLabel.textColor = .black
             statusImageView.image = UIImage(named: "status_pending")
 
         }

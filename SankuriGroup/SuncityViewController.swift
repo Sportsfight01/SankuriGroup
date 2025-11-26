@@ -16,7 +16,6 @@ struct Stage {
 class SuncityViewController: UIViewController {
 
     private var stages: [Stage] = []
-    private var planningColor: UIColor = .systemYellow
     private var selectedStageIndex: Int? = nil
     private var sideMenuView: UIView!
     private var sideMenuVisible = false
@@ -116,7 +115,7 @@ class SuncityViewController: UIViewController {
     // MARK: - Lifecycle
     override func viewDidLoad() {
         super.viewDidLoad()
-        view.backgroundColor = UIColor(white: 0.96, alpha: 1)
+        view.backgroundColor = AppStyle.Colors.bodyBackground
         navigationItem.hidesBackButton = true
         setupUI()
         setupImageSlider()
@@ -147,22 +146,10 @@ class SuncityViewController: UIViewController {
         menuButton.addTarget(self, action: #selector(toggleSideMenu), for: .touchUpInside)
         homeButton.addTarget(self, action: #selector(goHome), for: .touchUpInside)
         
-        let fullText = "Welcome To Suncity"
-        let attributed = NSMutableAttributedString(string: fullText)
-
-        // Range for "Welcome To"
-        if let rangeWelcome = fullText.range(of: "Welcome To") {
-            let nsRange = NSRange(rangeWelcome, in: fullText)
-            attributed.addAttribute(.foregroundColor, value: UIColor.black, range: nsRange)
-        }
-
-        // Range for "Suncity"
-        if let rangeSuncity = fullText.range(of: "Suncity") {
-            let nsRange = NSRange(rangeSuncity, in: fullText)
-            attributed.addAttribute(.foregroundColor, value: UIColor.systemYellow, range: nsRange)
-        }
-
-        titleLabel.attributedText = attributed
+        titleLabel.attributedText = AppStyle.headerTitle(
+            firstPart: "Welcome To",
+            secondPart: "Suncity"
+        )
         
         NSLayoutConstraint.activate([
             // Header icons
@@ -242,22 +229,24 @@ class SuncityViewController: UIViewController {
         welcomeLabel.text = "Suncity"
         welcomeLabel.font = UIFont(name: "Montserrat-SemiBold", size: 24)
         welcomeLabel.textColor = .black
+        welcomeLabel.textAlignment = .center
         sideMenuView.addSubview(welcomeLabel)
         
         // 2) Services button
-        let servicesButton = UIButton(type: .system)
-        servicesButton.setTitle("Services", for: .normal)
-        servicesButton.setTitleColor(.black, for: .normal)
-        servicesButton.contentHorizontalAlignment = .left
-        servicesButton.titleLabel?.font = UIFont(name: "Montserrat-Regular", size: 16)
-        servicesButton.frame = CGRect(x: 20, y: welcomeLabel.frame.maxY + 40, width: 200, height: 40)
-        sideMenuView.addSubview(servicesButton)
+        let enquireButton = UIButton(type: .system)
+        enquireButton.setTitle("Enquiry", for: .normal)
+        enquireButton.setTitleColor(.black, for: .normal)
+        enquireButton.contentHorizontalAlignment = .left
+        enquireButton.titleLabel?.font = UIFont(name: "Montserrat-Regular", size: 16)
+        enquireButton.frame = CGRect(x: 20, y: welcomeLabel.frame.maxY + 40, width: 200, height: 40)
+        enquireButton.addTarget(self, action: #selector(openContactUs), for: .touchUpInside)
+        sideMenuView.addSubview(enquireButton)
         
         // Divider line between Services and Contact Us
         let divider = UIView(
             frame: CGRect(
                 x: 20,
-                y: servicesButton.frame.maxY + 8,
+                y: enquireButton.frame.maxY + 8,
                 width: sideMenuView.frame.width - 40,
                 height: 0.5
             )
@@ -272,6 +261,7 @@ class SuncityViewController: UIViewController {
         contactButton.contentHorizontalAlignment = .left
         contactButton.titleLabel?.font = UIFont(name: "Montserrat-Regular", size: 16)
         contactButton.frame = CGRect(x: 20, y: divider.frame.maxY + 8, width: 200, height: 40)
+       // contactButton.addTarget(self, action: #selector(openContactUs), for: .touchUpInside)
         sideMenuView.addSubview(contactButton)
         
         // 4) Version label at bottom (auto from Info.plist)
@@ -280,8 +270,8 @@ class SuncityViewController: UIViewController {
         let version = Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "1.0"
 
         versionLabel.text = "Version \(version)"
-        versionLabel.font = UIFont(name: "Montserrat-Regular", size: 12)
-        versionLabel.textColor = .darkGray
+        versionLabel.font = UIFont(name: "Montserrat-Bold", size: 12)
+        versionLabel.textColor = .black
         versionLabel.textAlignment = .center
         versionLabel.translatesAutoresizingMaskIntoConstraints = false
 
@@ -297,8 +287,12 @@ class SuncityViewController: UIViewController {
         // Finally add menu to main view
         view.addSubview(sideMenuView)
     }
-
-
+    
+    @objc private func openContactUs() {
+        toggleSideMenu() // close menu smoothly
+        let enquiryVC = EnquiryViewController()
+        navigationController?.pushViewController(enquiryVC, animated: true)
+    }
 
     @objc private func toggleSideMenu() {
         UIView.animate(withDuration: 0.3) {
@@ -366,14 +360,13 @@ class SuncityViewController: UIViewController {
     private func loadDataFromService() {
         setupProgressBar(currentStage: "Planning")
         DispatchQueue.main.asyncAfter(deadline: .now() + 1) {
-            self.planningColor = UIColor(red: 0.95, green: 0.8, blue: 0.2, alpha: 1)
             self.stages = [
-                Stage(id: 1, name: "STAGE 01", color: .black),
-                Stage(id: 2, name: "STAGE 02", color: .darkGray),
-                Stage(id: 3, name: "STAGE 03", color: self.planningColor),
-                Stage(id: 4, name: "STAGE 04", color: .lightGray),
-                Stage(id: 5, name: "STAGE 05", color: .lightGray),
-                Stage(id: 6, name: "STAGE 06", color: .lightGray)
+                Stage(id: 1, name: "STAGE 01", color: AppStyle.Colors.yellow),
+                Stage(id: 2, name: "STAGE 02", color: AppStyle.Colors.yellow),
+                Stage(id: 3, name: "STAGE 03", color: .black),
+                Stage(id: 4, name: "STAGE 04", color: AppStyle.Colors.grey),
+                Stage(id: 5, name: "STAGE 05", color: AppStyle.Colors.grey),
+                Stage(id: 6, name: "STAGE 06", color: AppStyle.Colors.grey)
             ]
             self.setupStageGrid()
         }
@@ -393,11 +386,11 @@ class SuncityViewController: UIViewController {
             label.clipsToBounds = true
 
             if stage == currentStage {
-                label.backgroundColor = planningColor
+                label.backgroundColor = AppStyle.Colors.yellow
                 label.textColor = .black
             } else {
-                label.backgroundColor = .lightGray
-                label.textColor = .darkGray
+                label.backgroundColor = AppStyle.Colors.grey
+                label.textColor = .black
             }
             progressStackView.addArrangedSubview(label)
         }
@@ -441,7 +434,7 @@ class SuncityViewController: UIViewController {
         let label = UILabel()
         label.text = stage.name
         label.textAlignment = .center
-        label.textColor = stage.color == .lightGray ? .black : .white
+        label.textColor = stage.color == .black ? .white : .black
         label.font = UIFont(name: "Montserrat-Bold", size: 14)
         label.translatesAutoresizingMaskIntoConstraints = false
 

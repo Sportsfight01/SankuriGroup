@@ -115,7 +115,7 @@ final class StageDetailViewController: UIViewController {
     override func viewDidLoad() {
         super.viewDidLoad()
 
-        view.backgroundColor = UIColor(white: 0.96, alpha: 1)
+        view.backgroundColor = AppStyle.Colors.bodyBackground
         navigationController?.setNavigationBarHidden(true, animated: false)
 
         setupScrollView()
@@ -193,27 +193,11 @@ final class StageDetailViewController: UIViewController {
     }
 
     private func applyProjectTitle() {
-        let full = "Project Overview"
-        let attributed = NSMutableAttributedString(string: full)
-
-        if let rangeProject = full.range(of: "Project") {
-            let nsRange = NSRange(rangeProject, in: full)
-            attributed.addAttribute(.foregroundColor, value: UIColor.black, range: nsRange)
-        }
-
-        if let rangeOverview = full.range(of: "Overview") {
-            let nsRange = NSRange(rangeOverview, in: full)
-            let yellow = UIColor(red: 0.95, green: 0.8, blue: 0.2, alpha: 1)
-            attributed.addAttribute(.foregroundColor, value: yellow, range: nsRange)
-        }
-
-        attributed.addAttribute(
-            .font,
-            value: UIFont(name: "Montserrat-Bold", size: 22) ?? UIFont.boldSystemFont(ofSize: 22),
-            range: NSRange(location: 0, length: full.count)
+        
+        titleLabel.attributedText = AppStyle.headerTitle(
+            firstPart: "Project",
+            secondPart: "Overview"
         )
-
-        titleLabel.attributedText = attributed
     }
 
     private func setupCards() {
@@ -465,7 +449,7 @@ final class CircularProgressView: UIView {
         trackLayer.lineCap = .round
         layer.addSublayer(trackLayer)
 
-        progressLayer.strokeColor = UIColor(red: 0.95, green: 0.8, blue: 0.2, alpha: 1).cgColor
+        progressLayer.strokeColor = AppStyle.Colors.yellow.cgColor
         progressLayer.fillColor = UIColor.clear.cgColor
         progressLayer.lineWidth = 12
         progressLayer.lineCap = .round
