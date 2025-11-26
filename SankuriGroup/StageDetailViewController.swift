@@ -7,9 +7,25 @@
 
 import UIKit
 
+// Your app should already define:
+// struct Stage { let id: Int; let name: String }
+
+struct TimelineItem {
+    let name: String
+    let date: String
+    let status: TimelineStatus
+}
+
+enum TimelineStatus {
+    case completed
+    case inProgress
+    case pending
+}
+
 final class StageDetailViewController: UIViewController {
 
     // MARK: - Data
+
     private let stages: [Stage]
     private let currentStageId: Int
 
@@ -17,7 +33,22 @@ final class StageDetailViewController: UIViewController {
         stages.firstIndex(where: { $0.id == currentStageId }) ?? 0
     }
 
+    struct StageCardModel {
+        let title: String        // Project Overview / Registration Overview
+        let leftTitle: String    // Start Date / Registered
+        let leftValue: String    // January, 2026
+        let stageNumber: String
+        let progress: CGFloat
+    }
+
+    private var cards: [StageCardModel] = []
+
+    private var projectTimeline: [TimelineItem] = []
+    private var registrationTimeline: [TimelineItem] = []
+    private var currentPage: Int = 0
+
     // MARK: - UI
+
     private let scrollView = UIScrollView()
     private let contentView = UIView()
 
@@ -38,60 +69,37 @@ final class StageDetailViewController: UIViewController {
 
     private let titleLabel: UILabel = {
         let label = UILabel()
-        label.translatesAutoresizingMaskIntoConstraints = false
         label.numberOfLines = 1
-        return label
-    }()
-
-    private let progressCard = UIView()
-    private let startDateTitleLabel: UILabel = {
-        let label = UILabel()
-        label.text = "Start Date"
-        label.font = UIFont(name: "Montserrat-Regular", size: 12)
-        label.textColor = .darkGray
         label.translatesAutoresizingMaskIntoConstraints = false
         return label
     }()
 
-    private let startDateValueLabel: UILabel = {
-        let label = UILabel()
-        label.text = "January, 2026"        // replace with real date if you have it
-        label.font = UIFont(name: "Montserrat-SemiBold", size: 16)
-        label.textColor = .black
-        label.translatesAutoresizingMaskIntoConstraints = false
-        return label
+    // Card slider
+    private var collectionView: UICollectionView!
+    private let pageControl: UIPageControl = {
+        let pc = UIPageControl()
+        pc.currentPage = 0
+        pc.pageIndicatorTintColor = .lightGray
+        pc.currentPageIndicatorTintColor = .black
+        pc.translatesAutoresizingMaskIntoConstraints = false
+        return pc
     }()
 
-    private let circularProgress = CircularProgressView()
-
+    // Timeline
     private let timelineTitleLabel: UILabel = {
         let label = UILabel()
         label.text = "Timeline"
-        label.font = UIFont(name: "Montserrat-SemiBold", size: 16)
+        label.font = UIFont(name: "Montserrat-Bold", size: 20) ?? .boldSystemFont(ofSize: 20)
         label.textColor = .black
         label.translatesAutoresizingMaskIntoConstraints = false
         return label
     }()
-    
-    private let stageNameLabel: UILabel = {
-        let label = UILabel()
-        label.textAlignment = .right
-        label.numberOfLines = 2
-        label.translatesAutoresizingMaskIntoConstraints = false
-        return label
-    }()
 
-
-
-    private let timelineStackView: UIStackView = {
-        let stack = UIStackView()
-        stack.axis = .vertical
-        stack.spacing = 12
-        stack.translatesAutoresizingMaskIntoConstraints = false
-        return stack
-    }()
+    private let timelineTableView = UITableView()
+    private var tableHeightConstraint: NSLayoutConstraint?
 
     // MARK: - Init
+
     init(stages: [Stage], currentStageId: Int) {
         self.stages = stages
         self.currentStageId = currentStageId
@@ -103,20 +111,43 @@ final class StageDetailViewController: UIViewController {
     }
 
     // MARK: - Lifecycle
+
     override func viewDidLoad() {
         super.viewDidLoad()
+
         view.backgroundColor = UIColor(white: 0.96, alpha: 1)
         navigationController?.setNavigationBarHidden(true, animated: false)
 
         setupScrollView()
         setupHeader()
-        setupProgressCard()
-        setupTimeline()
         applyProjectTitle()
-        applyProgress()
+
+        setupCards()
+        setupCollectionView()
+        setupTimelineTableView()
+        setupTimelineData()
+        
+        timelineTableView.reloadData()
+
+        // visual so card shadow not clipped
+        collectionView.clipsToBounds = false
+        collectionView.superview?.clipsToBounds = false
+        scrollView.clipsToBounds = false
+        contentView.clipsToBounds = false
+    }
+
+    override func viewDidAppear(_ animated: Bool) {
+        super.viewDidAppear(animated)
+        updateTimelineForPage(currentPage)
+    }
+
+    override func viewDidLayoutSubviews() {
+        super.viewDidLayoutSubviews()
+        updateTimelineForPage(currentPage)
     }
 
     // MARK: - Setup
+
     private func setupScrollView() {
         scrollView.translatesAutoresizingMaskIntoConstraints = false
         contentView.translatesAutoresizingMaskIntoConstraints = false
@@ -161,197 +192,246 @@ final class StageDetailViewController: UIViewController {
         ])
     }
 
-    private func setupProgressCard() {
-        progressCard.translatesAutoresizingMaskIntoConstraints = false
-        progressCard.backgroundColor = .white
-        progressCard.layer.cornerRadius = 16
-        progressCard.layer.shadowColor = UIColor.black.cgColor
-        progressCard.layer.shadowOpacity = 0.08
-        progressCard.layer.shadowOffset = CGSize(width: 0, height: 4)
-        progressCard.layer.shadowRadius = 10
-
-        contentView.addSubview(progressCard)
-        progressCard.addSubview(startDateTitleLabel)
-        progressCard.addSubview(startDateValueLabel)
-        progressCard.addSubview(stageNameLabel)
-
-
-        circularProgress.translatesAutoresizingMaskIntoConstraints = false
-        progressCard.addSubview(circularProgress)
-
-        NSLayoutConstraint.activate([
-            progressCard.topAnchor.constraint(equalTo: titleLabel.bottomAnchor, constant: 20),
-            progressCard.leadingAnchor.constraint(equalTo: contentView.leadingAnchor, constant: 24),
-            progressCard.trailingAnchor.constraint(equalTo: contentView.trailingAnchor, constant: -24),
-            progressCard.heightAnchor.constraint(equalToConstant: 260),
-
-            startDateTitleLabel.topAnchor.constraint(equalTo: progressCard.topAnchor, constant: 16),
-            startDateTitleLabel.leadingAnchor.constraint(equalTo: progressCard.leadingAnchor, constant: 16),
-
-            startDateValueLabel.topAnchor.constraint(equalTo: startDateTitleLabel.bottomAnchor, constant: 4),
-            startDateValueLabel.leadingAnchor.constraint(equalTo: startDateTitleLabel.leadingAnchor),
-
-            circularProgress.centerXAnchor.constraint(equalTo: progressCard.centerXAnchor),
-            circularProgress.centerYAnchor.constraint(equalTo: progressCard.centerYAnchor, constant: 20),
-            circularProgress.widthAnchor.constraint(equalToConstant: 160),
-            circularProgress.heightAnchor.constraint(equalToConstant: 160),
-            
-            stageNameLabel.topAnchor.constraint(equalTo: progressCard.topAnchor, constant: 16),
-                stageNameLabel.trailingAnchor.constraint(equalTo: progressCard.trailingAnchor, constant: -16)
-        ])
-    }
-
-    private func setupTimeline() {
-        contentView.addSubview(timelineTitleLabel)
-        contentView.addSubview(timelineStackView)
-
-        NSLayoutConstraint.activate([
-            timelineTitleLabel.topAnchor.constraint(equalTo: progressCard.bottomAnchor, constant: 30),
-            timelineTitleLabel.leadingAnchor.constraint(equalTo: contentView.leadingAnchor, constant: 24),
-            timelineTitleLabel.trailingAnchor.constraint(equalTo: contentView.trailingAnchor, constant: -24),
-
-            timelineStackView.topAnchor.constraint(equalTo: timelineTitleLabel.bottomAnchor, constant: 12),
-            timelineStackView.leadingAnchor.constraint(equalTo: contentView.leadingAnchor, constant: 24),
-            timelineStackView.trailingAnchor.constraint(equalTo: contentView.trailingAnchor, constant: -24),
-            timelineStackView.bottomAnchor.constraint(equalTo: contentView.bottomAnchor, constant: -40)
-        ])
-
-        buildTimelineCards()
-    }
-
     private func applyProjectTitle() {
         let full = "Project Overview"
         let attributed = NSMutableAttributedString(string: full)
 
-        // "Project" in black
         if let rangeProject = full.range(of: "Project") {
             let nsRange = NSRange(rangeProject, in: full)
             attributed.addAttribute(.foregroundColor, value: UIColor.black, range: nsRange)
         }
 
-        // "Overview" in yellow
         if let rangeOverview = full.range(of: "Overview") {
             let nsRange = NSRange(rangeOverview, in: full)
             let yellow = UIColor(red: 0.95, green: 0.8, blue: 0.2, alpha: 1)
             attributed.addAttribute(.foregroundColor, value: yellow, range: nsRange)
         }
 
-        // Font
         attributed.addAttribute(
             .font,
-            value: UIFont(name: "Montserrat-Bold", size: 22)!,
+            value: UIFont(name: "Montserrat-Bold", size: 22) ?? UIFont.boldSystemFont(ofSize: 22),
             range: NSRange(location: 0, length: full.count)
         )
 
         titleLabel.attributedText = attributed
     }
 
-    private func applyProgress() {
-        let total = max(stages.count, 1)
-        let value = CGFloat(currentIndex + 1) / CGFloat(total)
-        circularProgress.progress = value
+    private func setupCards() {
+        let stageName = stages[currentIndex].name
+        let numberPart = stageName.components(separatedBy: " ").last ?? "01"
 
-        // Extract stage number from name: "STAGE 02" → "02"
-        let rawName = stages[currentIndex].name
-        let numberPart = rawName.components(separatedBy: " ").last ?? ""
+        cards = [
+            StageCardModel(
+                title: "Project Overview",
+                leftTitle: "Start Date",
+                leftValue: "January, 2026",
+                stageNumber: numberPart,
+                progress: 0.33
+            ),
+            StageCardModel(
+                title: "Registration Overview",
+                leftTitle: "Start Date",
+                leftValue: "April, 2026",
+                stageNumber: numberPart,
+                progress: 0.60
+            )
+        ]
 
-        // Build two-line text: "Stage\n02"
-        let fullText = "Stage\n\(numberPart)"
-        let attributed = NSMutableAttributedString(string: fullText)
-
-        // Line 1: "Stage" (small, grey)
-        let topRange = (fullText as NSString).range(of: "Stage")
-        attributed.addAttribute(.font, value: UIFont(name: "Montserrat-Regular", size: 12)!, range: topRange)
-        attributed.addAttribute(.foregroundColor, value: UIColor.darkGray, range: topRange)
-
-        // Line 2: number (bold, black)
-        let numRange = (fullText as NSString).range(of: numberPart)
-        attributed.addAttribute(.font, value: UIFont(name: "Montserrat-Bold", size: 16)!, range: numRange)
-        attributed.addAttribute(.foregroundColor, value: UIColor.black, range: numRange)
-
-        stageNameLabel.attributedText = attributed
+        pageControl.numberOfPages = cards.count
+        pageControl.currentPage = 0
     }
 
+    private func setupCollectionView() {
+        let layout = UICollectionViewFlowLayout()
+        layout.scrollDirection = .horizontal
+        layout.minimumLineSpacing = 16
+        layout.sectionInset = UIEdgeInsets(top: 0, left: 24, bottom: 0, right: 24)
 
-    // MARK: - Timeline building
-    private func buildTimelineCards() {
-        timelineStackView.arrangedSubviews.forEach { $0.removeFromSuperview() }
+        collectionView = UICollectionView(frame: .zero, collectionViewLayout: layout)
+        collectionView.translatesAutoresizingMaskIntoConstraints = false
+        collectionView.backgroundColor = .clear
+        collectionView.showsHorizontalScrollIndicator = false
+        collectionView.decelerationRate = .fast
+        collectionView.isPagingEnabled = true
 
-        let highlightColor = UIColor(red: 0.95, green: 0.8, blue: 0.2, alpha: 1)
+        collectionView.register(ProgressCardCell.self,
+                                forCellWithReuseIdentifier: ProgressCardCell.identifier)
+        collectionView.dataSource = self
+        collectionView.delegate = self
 
-        for (index, stage) in stages.enumerated() {
-            let card = UIView()
-            card.layer.cornerRadius = 14
-            card.translatesAutoresizingMaskIntoConstraints = false
-            card.heightAnchor.constraint(equalToConstant: 70).isActive = true
+        contentView.addSubview(collectionView)
+        contentView.addSubview(pageControl)
 
-            let isDone = index < currentIndex
-            let isCurrent = index == currentIndex
+        pageControl.addTarget(self, action: #selector(pageControlChanged(_:)), for: .valueChanged)
 
-            if isCurrent {
-                card.backgroundColor = .black
-            } else if isDone {
-                card.backgroundColor = highlightColor
-            } else {
-                card.backgroundColor = .white
-                card.layer.borderWidth = 0.5
-                card.layer.borderColor = UIColor.lightGray.cgColor
-            }
+        NSLayoutConstraint.activate([
+            collectionView.topAnchor.constraint(equalTo: titleLabel.bottomAnchor, constant: 20),
+            collectionView.leadingAnchor.constraint(equalTo: contentView.leadingAnchor),
+            collectionView.trailingAnchor.constraint(equalTo: contentView.trailingAnchor),
+            collectionView.heightAnchor.constraint(equalToConstant: 250),
 
-            let circle = UIView()
-            circle.translatesAutoresizingMaskIntoConstraints = false
-            circle.layer.cornerRadius = 10
-            circle.layer.borderWidth = 2
-            circle.layer.borderColor = UIColor.black.cgColor
-            circle.backgroundColor = isDone || isCurrent ? .black : .clear
+            pageControl.topAnchor.constraint(equalTo: collectionView.bottomAnchor, constant: 8),
+            pageControl.centerXAnchor.constraint(equalTo: contentView.centerXAnchor)
+        ])
+    }
 
-            let stepLabel = UILabel()
-            stepLabel.translatesAutoresizingMaskIntoConstraints = false
-            stepLabel.text = "STEP \(index + 1)"
-            stepLabel.font = UIFont(name: "Montserrat-Medium", size: 11)
-            stepLabel.textColor = isDone || isCurrent ? .white : .darkGray
+    private func setupTimelineTableView() {
+        timelineTableView.translatesAutoresizingMaskIntoConstraints = false
+        timelineTableView.dataSource = self
+        timelineTableView.delegate = self
+        timelineTableView.separatorStyle = .none
+        timelineTableView.backgroundColor = .clear
+        timelineTableView.isScrollEnabled = false
 
-            let nameLabel = UILabel()
-            nameLabel.translatesAutoresizingMaskIntoConstraints = false
-            nameLabel.text = stage.name.replacingOccurrences(of: "_", with: " ")
-            nameLabel.font = UIFont(name: "Montserrat-SemiBold", size: 14)
-            nameLabel.textColor = isDone || isCurrent ? .white : .black
+        timelineTableView.register(TimelineCell.self,
+                                   forCellReuseIdentifier: TimelineCell.identifier)
 
-            card.addSubview(circle)
-            card.addSubview(stepLabel)
-            card.addSubview(nameLabel)
+        contentView.addSubview(timelineTitleLabel)
+        contentView.addSubview(timelineTableView)
 
-            NSLayoutConstraint.activate([
-                circle.leadingAnchor.constraint(equalTo: card.leadingAnchor, constant: 16),
-                circle.centerYAnchor.constraint(equalTo: card.centerYAnchor),
-                circle.widthAnchor.constraint(equalToConstant: 20),
-                circle.heightAnchor.constraint(equalToConstant: 20),
+        tableHeightConstraint = timelineTableView.heightAnchor.constraint(equalToConstant: 0)
+        tableHeightConstraint?.isActive = true
 
-                stepLabel.leadingAnchor.constraint(equalTo: circle.trailingAnchor, constant: 12),
-                stepLabel.topAnchor.constraint(equalTo: card.topAnchor, constant: 14),
+        NSLayoutConstraint.activate([
+            timelineTitleLabel.topAnchor.constraint(equalTo: pageControl.bottomAnchor, constant: 24),
+            timelineTitleLabel.leadingAnchor.constraint(equalTo: contentView.leadingAnchor, constant: 24),
+            timelineTitleLabel.trailingAnchor.constraint(equalTo: contentView.trailingAnchor, constant: -24),
 
-                nameLabel.leadingAnchor.constraint(equalTo: stepLabel.leadingAnchor),
-                nameLabel.topAnchor.constraint(equalTo: stepLabel.bottomAnchor, constant: 4),
-                nameLabel.trailingAnchor.constraint(equalTo: card.trailingAnchor, constant: -16)
-            ])
+            timelineTableView.topAnchor.constraint(equalTo: timelineTitleLabel.bottomAnchor, constant: 12),
+            timelineTableView.leadingAnchor.constraint(equalTo: contentView.leadingAnchor),
+            timelineTableView.trailingAnchor.constraint(equalTo: contentView.trailingAnchor),
+            timelineTableView.bottomAnchor.constraint(equalTo: contentView.bottomAnchor, constant: -40)
+        ])
+    }
 
-            timelineStackView.addArrangedSubview(card)
+    private func setupTimelineData() {
+        // Card 0 – Project Overview
+        projectTimeline = [
+            TimelineItem(name: "Foundation Work",   date: "10 Jan 2026", status: .completed),
+            TimelineItem(name: "Column Setup",      date: "22 Jan 2026", status: .inProgress),
+            TimelineItem(name: "Brick Work",        date: "15 Feb 2026", status: .pending),
+            TimelineItem(name: "Foundation Work",   date: "10 Jan 2026", status: .completed),
+            TimelineItem(name: "Column Setup",      date: "22 Jan 2026", status: .inProgress),
+            TimelineItem(name: "Brick Work",        date: "15 Feb 2026", status: .pending)
+        ]
+
+        // Card 1 – Registration Overview
+        registrationTimeline = [
+            TimelineItem(name: "Submit Documents",  date: "02 Jan 2026", status: .completed),
+            TimelineItem(name: "Verification",      date: "08 Jan 2026", status: .inProgress),
+            TimelineItem(name: "Approval",          date: "20 Jan 2026", status: .pending),
+            TimelineItem(name: "Submit Documents",  date: "02 Jan 2026", status: .completed),
+            TimelineItem(name: "Verification",      date: "08 Jan 2026", status: .inProgress)
+        ]
+
+        updateTimelineForPage(0)
+    }
+
+    // MARK: - Timeline switching
+
+    private func updateTimelineForPage(_ page: Int) {
+        currentPage = max(0, min(page, cards.count - 1))
+
+        timelineTableView.reloadData()
+
+        DispatchQueue.main.async {
+            self.timelineTableView.layoutIfNeeded()
+            self.tableHeightConstraint?.constant = self.timelineTableView.contentSize.height
+            self.view.layoutIfNeeded()
         }
     }
 
+
+
     // MARK: - Actions
+
     @objc private func didTapBack() {
         navigationController?.popViewController(animated: true)
     }
+
+    @objc private func pageControlChanged(_ sender: UIPageControl) {
+        let page = sender.currentPage
+        let indexPath = IndexPath(item: page, section: 0)
+        collectionView.scrollToItem(at: indexPath, at: .centeredHorizontally, animated: true)
+        updateTimelineForPage(page)
+    }
 }
+
+
+// MARK: - CollectionView + Snapping
+
+extension StageDetailViewController: UICollectionViewDataSource, UICollectionViewDelegateFlowLayout, UIScrollViewDelegate {
+
+    func collectionView(_ collectionView: UICollectionView, numberOfItemsInSection section: Int) -> Int {
+        cards.count
+    }
+
+    func collectionView(_ collectionView: UICollectionView,
+                        layout collectionViewLayout: UICollectionViewLayout,
+                        sizeForItemAt indexPath: IndexPath) -> CGSize {
+
+        guard let layout = collectionView.collectionViewLayout as? UICollectionViewFlowLayout else {
+            return CGSize(width: collectionView.bounds.width - 48, height: 250)
+        }
+
+        let insets = layout.sectionInset.left + layout.sectionInset.right
+        let spacing = layout.minimumLineSpacing
+        let width = collectionView.bounds.width - insets - spacing
+
+        return CGSize(width: width, height: 250)
+    }
+
+    func collectionView(_ collectionView: UICollectionView,
+                        cellForItemAt indexPath: IndexPath) -> UICollectionViewCell {
+
+        guard let cell = collectionView.dequeueReusableCell(
+            withReuseIdentifier: ProgressCardCell.identifier,
+            for: indexPath
+        ) as? ProgressCardCell else {
+            return UICollectionViewCell()
+        }
+
+        let model = cards[indexPath.item]
+        cell.configure(leftTitle: model.leftTitle,
+                       leftValue: model.leftValue,
+                       stageNumber: model.stageNumber,
+                       progress: model.progress)
+        return cell
+    }
+
+    // Snapping only for the card collection view
+
+    func scrollViewDidEndDecelerating(_ scrollView: UIScrollView) {
+        guard scrollView === collectionView else { return }
+        updatePageFromCollection()
+    }
+
+    func scrollViewDidEndScrollingAnimation(_ scrollView: UIScrollView) {
+        guard scrollView === collectionView else { return }
+        updatePageFromCollection()
+    }
+
+    private func updatePageFromCollection() {
+        let visibleRect = CGRect(origin: collectionView.contentOffset, size: collectionView.bounds.size)
+        let visiblePoint = CGPoint(x: visibleRect.midX, y: visibleRect.midY)
+
+        if let indexPath = collectionView.indexPathForItem(at: visiblePoint) {
+            pageControl.currentPage = indexPath.item
+            updateTimelineForPage(indexPath.item)
+        }
+    }
+}
+
+// MARK: - CircularProgressView
 
 final class CircularProgressView: UIView {
 
     private let trackLayer = CAShapeLayer()
     private let progressLayer = CAShapeLayer()
+
     private let percentageLabel: UILabel = {
         let label = UILabel()
-        label.font = UIFont(name: "Montserrat-Bold", size: 28)
+        label.font = UIFont(name: "Montserrat-Bold", size: 28) ?? .boldSystemFont(ofSize: 28)
         label.textColor = .black
         label.textAlignment = .center
         label.translatesAutoresizingMaskIntoConstraints = false
@@ -379,7 +459,7 @@ final class CircularProgressView: UIView {
     private func commonInit() {
         backgroundColor = .clear
 
-        trackLayer.strokeColor =  UIColor.black.cgColor
+        trackLayer.strokeColor = UIColor.black.cgColor
         trackLayer.fillColor = UIColor.clear.cgColor
         trackLayer.lineWidth = 12
         trackLayer.lineCap = .round
@@ -401,20 +481,55 @@ final class CircularProgressView: UIView {
 
     override func layoutSubviews() {
         super.layoutSubviews()
+
         let centerPoint = CGPoint(x: bounds.midX, y: bounds.midY)
         let radius = min(bounds.width, bounds.height) / 2 - 15
         let startAngle = -CGFloat.pi / 2
         let endAngle = startAngle + 2 * CGFloat.pi
 
-        let path = UIBezierPath(arcCenter: centerPoint,
-                                radius: radius,
-                                startAngle: startAngle,
-                                endAngle: endAngle,
-                                clockwise: true)
+        let path = UIBezierPath(
+            arcCenter: centerPoint,
+            radius: radius,
+            startAngle: startAngle,
+            endAngle: endAngle,
+            clockwise: true
+        )
 
         trackLayer.path = path.cgPath
         progressLayer.path = path.cgPath
         trackLayer.frame = bounds
         progressLayer.frame = bounds
+    }
+}
+
+// MARK: - UITableViewDataSource / Delegate
+
+extension StageDetailViewController: UITableViewDataSource, UITableViewDelegate {
+
+    func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
+        currentPage == 0 ? projectTimeline.count : registrationTimeline.count
+    }
+
+    func tableView(_ tableView: UITableView,
+                   cellForRowAt indexPath: IndexPath) -> UITableViewCell {
+
+        guard let cell = tableView.dequeueReusableCell(
+            withIdentifier: TimelineCell.identifier,
+            for: indexPath
+        ) as? TimelineCell else {
+            return UITableViewCell()
+        }
+
+        let item = currentPage == 0
+            ? projectTimeline[indexPath.row]
+            : registrationTimeline[indexPath.row]
+
+        cell.configure(with: item)
+        return cell
+    }
+
+    func tableView(_ tableView: UITableView,
+                   heightForRowAt indexPath: IndexPath) -> CGFloat {
+        100
     }
 }
