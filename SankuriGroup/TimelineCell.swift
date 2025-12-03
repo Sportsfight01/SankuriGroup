@@ -32,11 +32,11 @@ class TimelineCell: UITableViewCell {
         bgView.layer.cornerRadius = 16
         bgView.translatesAutoresizingMaskIntoConstraints = false
 
-        titleLabel.font = UIFont(name: "Montserrat-SemiBold", size: 20)
+        titleLabel.font = UIFont(name: "Montserrat-SemiBold", size: 16)
         titleLabel.textColor = .black
         titleLabel.translatesAutoresizingMaskIntoConstraints = false
 
-        dateLabel.font = UIFont(name: "Montserrat-Regular", size: 16)
+        dateLabel.font = UIFont(name: "Montserrat-Regular", size: 12)
         dateLabel.textColor = .darkGray
         dateLabel.translatesAutoresizingMaskIntoConstraints = false
 
