@@ -17,6 +17,8 @@ class SuncityViewController: UIViewController {
 
     // MARK: - Public
     var estateId: Int?
+    private let sideMenu = SideMenuView()
+
 
     // MARK: - Data
     private var stages: [Stage] = []
@@ -60,7 +62,8 @@ class SuncityViewController: UIViewController {
         super.viewDidLoad()
         view.backgroundColor = AppStyle.Colors.bodyBackground
         navigationController?.setNavigationBarHidden(true, animated: false)
-
+        sideMenu.delegate = self
+        
         setupScroll()
         setupUI()
         setupSlider()
@@ -68,6 +71,20 @@ class SuncityViewController: UIViewController {
 
         guard let estateId else { return }
         fetchEstateDetails(id: estateId)
+        menuButton.addTarget(self, action: #selector(menuTapped), for: .touchUpInside)
+        homeButton.addTarget(self, action: #selector(homeTapped), for: .touchUpInside)
+    }
+
+    @objc private func menuTapped() {
+        print("Menu tapped")
+        sideMenu.show(in: view)
+
+    }
+
+    @objc private func homeTapped() {
+        print("Home tapped")
+
+        navigationController?.popToRootViewController(animated: true)
     }
 
     // MARK: - Scroll Setup
@@ -191,6 +208,9 @@ class SuncityViewController: UIViewController {
             firstPart: "Welcome To",
             secondPart: estateName.capitalized
         )
+        
+        sideMenu.titleText = estateName.capitalized
+
     }
 
 
@@ -286,3 +306,24 @@ class SuncityViewController: UIViewController {
         navigationController?.pushViewController(vc, animated: true)
     }
 }
+
+
+extension SuncityViewController: SideMenuDelegate {
+
+    func didSelectMenuItem(_ item: SideMenuView.MenuItem) {
+        switch item {
+
+        case .home:
+            navigationController?.popToRootViewController(animated: true)
+
+        case .enquiry:
+            let vc = EnquiryViewController()
+            navigationController?.pushViewController(vc, animated: true)
+
+        case .logout:
+            print("Logout tapped")
+            // Clear user session here
+        }
+    }
+}
+
