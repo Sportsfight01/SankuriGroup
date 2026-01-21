@@ -47,7 +47,7 @@ class HomeViewController: UIViewController {
 
         // NAME LABEL
         let nameLabel = UILabel()
-        nameLabel.text = estate.name
+        nameLabel.text = estate.name.capitalized
         nameLabel.font = UIFont(name: "Montserrat-SemiBold", size: 16)
         nameLabel.textColor = .black
         nameLabel.textAlignment = .center

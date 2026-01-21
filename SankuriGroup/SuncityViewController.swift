@@ -14,147 +14,111 @@ struct Stage {
 }
 
 class SuncityViewController: UIViewController {
-    
-    var estateId: Int?   // ✅ ADD THIS LINE
 
+    // MARK: - Public
+    var estateId: Int?
 
+    // MARK: - Data
     private var stages: [Stage] = []
-    private var selectedStageIndex: Int? = nil
-    private var sideMenuView: UIView!
-    private var sideMenuVisible = false
-    private var dimmedView: UIView!
-    private var sliderTimer: Timer?
-    private var currentSlideIndex = 0
-    
 
+    // MARK: - Scroll
+    private let scrollView = UIScrollView()
+    private let contentView = UIView()
 
+    // MARK: - Header
+    private let menuButton = UIButton(type: .system)
+    private let homeButton = UIButton(type: .system)
+    private let logoImageView = UIImageView(image: UIImage(named: "Suncity_Logo"))
 
-    // MARK: - Header UI
-    private let menuButton: UIButton = {
-        let button = UIButton(type: .system)
-        button.setImage(UIImage(systemName: "line.3.horizontal"), for: .normal)
-        button.tintColor = .black
-        button.translatesAutoresizingMaskIntoConstraints = false
-        return button
-    }()
-    
-    private let homeButton: UIButton = {
-        let button = UIButton(type: .system)
-        button.setImage(UIImage(systemName: "house.fill"), for: .normal)
-        button.tintColor = .black
-        button.translatesAutoresizingMaskIntoConstraints = false
-        return button
-    }()
-
-    private let logoImageView: UIImageView = {
-        let imageView = UIImageView(image: UIImage(named: "Suncity_Logo"))
-        imageView.contentMode = .scaleAspectFit
-        imageView.translatesAutoresizingMaskIntoConstraints = false
-        return imageView
-    }()
+    private var estateName: String = ""
 
     private let titleLabel: UILabel = {
-        let label = UILabel()
-        label.text = "Welcome To Suncity"
-        label.font = UIFont(name: "Montserrat-Bold", size: 22)
-        label.textColor = .black
-        label.translatesAutoresizingMaskIntoConstraints = false
-        return label
-    }()
-    
-
-    private let siteImageView: UIImageView = {
-        let imageView = UIImageView(image: UIImage(named: "site_image"))
-        imageView.contentMode = .scaleAspectFill
-        imageView.layer.cornerRadius = 12
-        imageView.clipsToBounds = true
-        imageView.translatesAutoresizingMaskIntoConstraints = false
-        return imageView
-    }()
-    
-    private let sliderScrollView: UIScrollView = {
-        let scroll = UIScrollView()
-        scroll.isPagingEnabled = true
-        scroll.showsHorizontalScrollIndicator = false
-        scroll.translatesAutoresizingMaskIntoConstraints = false
-        return scroll
+        let lbl = UILabel()
+        lbl.translatesAutoresizingMaskIntoConstraints = false
+        return lbl
     }()
 
-    private let sliderPageControl: UIPageControl = {
-        let pageControl = UIPageControl()
-        pageControl.numberOfPages = 5
-        pageControl.currentPage = 0
-        pageControl.translatesAutoresizingMaskIntoConstraints = false
-        return pageControl
-    }()
+    // MARK: - Slider
+    private let sliderScrollView = UIScrollView()
+    private let pageControl = UIPageControl()
 
+    // MARK: - Phase bar
+    private let progressStackView = UIStackView()
 
-    private let progressStackView: UIStackView = {
-        let stack = UIStackView()
-        stack.axis = .horizontal
-        stack.distribution = .fillEqually
-        stack.spacing = 4
-        stack.translatesAutoresizingMaskIntoConstraints = false
-        return stack
-    }()
-
+    // MARK: - Stages
     private let stagesTitleLabel: UILabel = {
-        let label = UILabel()
-        label.text = "Stages"
-        label.font = UIFont(name: "Montserrat-Bold", size: 20)
-        label.textColor = .black
-        label.translatesAutoresizingMaskIntoConstraints = false
-        return label
+        let lbl = UILabel()
+        lbl.text = "Stages"
+        lbl.font = UIFont(name: "Montserrat-Bold", size: 20)
+        return lbl
     }()
 
-    private let stageStackView: UIStackView = {
-        let stack = UIStackView()
-        stack.axis = .vertical
-        stack.alignment = .center
-        stack.spacing = 12
-        stack.translatesAutoresizingMaskIntoConstraints = false
-        return stack
-    }()
+    private let stageGridStack = UIStackView()
 
     // MARK: - Lifecycle
     override func viewDidLoad() {
         super.viewDidLoad()
         view.backgroundColor = AppStyle.Colors.bodyBackground
-        navigationItem.hidesBackButton = true
-        
-        guard let estateId else {
-                    print("❌ estateId not received")
-                    return
-                }
+        navigationController?.setNavigationBarHidden(true, animated: false)
 
-                print("✅ estateId received:", estateId)
-                fetchEstateDetails(id: estateId)
-        
+        setupScroll()
         setupUI()
-        setupImageSlider()
-        startAutoSlider()
-        setupMenu()
-        loadDataFromService()
-    }
-    
-    override func viewWillAppear(_ animated: Bool) {
-        super.viewWillAppear(animated)
-        navigationController?.setNavigationBarHidden(true, animated: true)
+        setupSlider()
+        setupPhaseBar()
+
+        guard let estateId else { return }
+        fetchEstateDetails(id: estateId)
     }
 
+    // MARK: - Scroll Setup
+    private func setupScroll() {
+        scrollView.translatesAutoresizingMaskIntoConstraints = false
+        contentView.translatesAutoresizingMaskIntoConstraints = false
+
+        view.addSubview(scrollView)
+        scrollView.addSubview(contentView)
+
+        NSLayoutConstraint.activate([
+            scrollView.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor),
+            scrollView.leadingAnchor.constraint(equalTo: view.leadingAnchor),
+            scrollView.trailingAnchor.constraint(equalTo: view.trailingAnchor),
+            scrollView.bottomAnchor.constraint(equalTo: view.bottomAnchor),
+
+            contentView.topAnchor.constraint(equalTo: scrollView.topAnchor),
+            contentView.leadingAnchor.constraint(equalTo: scrollView.leadingAnchor),
+            contentView.trailingAnchor.constraint(equalTo: scrollView.trailingAnchor),
+            contentView.bottomAnchor.constraint(equalTo: scrollView.bottomAnchor),
+            contentView.widthAnchor.constraint(equalTo: scrollView.widthAnchor)
+        ])
+    }
+
+    // MARK: - API
     private func fetchEstateDetails(id: Int) {
-        EstateService.shared.getEstateDetails(estateId: id) { [weak self] result in
-            DispatchQueue.main.async {
-                switch result {
-                case .success(let estate):
-                    print("✅ Estate details received:", estate)
+        EstateService.shared.getEstateById(estateId: id) { [weak self] result in
+            guard let self else { return }
 
-                    // TODO: update UI here
-                    // self?.updateUI(with: estate)
+            switch result {
+            case .success(let response):
 
-                case .failure(let error):
-                    print("❌ Failed to fetch estate details:", error.localizedDescription)
+                // ✅ Save estate name
+                self.estateName = response.name ?? ""
+
+                // ✅ Update welcome label
+                self.updateWelcomeTitle()
+
+                // Existing stage logic
+                self.stages = response.estateStages.map {
+                    Stage(
+                        id: $0.stageId,
+                        name: "STAGE \($0.stageId)",
+                        color: AppStyle.Colors.yellow
+                    )
                 }
+
+                self.buildStageGrid()
+
+            case .failure(let error):
+                print(error)
             }
         }
     }
@@ -162,352 +126,163 @@ class SuncityViewController: UIViewController {
 
     // MARK: - UI Setup
     private func setupUI() {
-        
-        view.addSubview(menuButton)
-        view.addSubview(homeButton)
-        view.addSubview(logoImageView)
-        view.addSubview(titleLabel)
-        view.addSubview(sliderScrollView)
-        view.addSubview(sliderPageControl)
-        view.addSubview(progressStackView)
-        view.addSubview(stagesTitleLabel)
-        view.addSubview(stageStackView)
-        
-        menuButton.addTarget(self, action: #selector(toggleSideMenu), for: .touchUpInside)
-        homeButton.addTarget(self, action: #selector(goHome), for: .touchUpInside)
-        
-        titleLabel.attributedText = AppStyle.headerTitle(
-            firstPart: "Welcome To",
-            secondPart: "Suncity"
-        )
-        
+
+        [menuButton, homeButton, logoImageView,
+         titleLabel, sliderScrollView, pageControl,
+         progressStackView, stagesTitleLabel, stageGridStack].forEach {
+            $0.translatesAutoresizingMaskIntoConstraints = false
+            contentView.addSubview($0)
+        }
+
+        menuButton.setImage(UIImage(systemName: "line.3.horizontal"), for: .normal)
+        homeButton.setImage(UIImage(systemName: "house.fill"), for: .normal)
+
+//        titleLabel.attributedText = AppStyle.headerTitle(
+//            firstPart: "Welcome To",
+//            secondPart: "Suncity"
+//        )
+
+        progressStackView.axis = .horizontal
+        progressStackView.distribution = .fillEqually
+        progressStackView.spacing = 8
+
+        stageGridStack.axis = .vertical
+        stageGridStack.spacing = 12
+
         NSLayoutConstraint.activate([
-            // Header icons
-            menuButton.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor, constant: 8),
-            menuButton.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: 20),
-            menuButton.widthAnchor.constraint(equalToConstant: 30),
-            menuButton.heightAnchor.constraint(equalToConstant: 30),
-            
-            // Home Button
+            menuButton.topAnchor.constraint(equalTo: contentView.topAnchor, constant: 10),
+            menuButton.leadingAnchor.constraint(equalTo: contentView.leadingAnchor, constant: 20),
+
             homeButton.centerYAnchor.constraint(equalTo: menuButton.centerYAnchor),
-            homeButton.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -20),
-            homeButton.widthAnchor.constraint(equalToConstant: 30),
-            homeButton.heightAnchor.constraint(equalToConstant: 30),
-            
-            // Logo placed BETWEEN menu & home
+            homeButton.trailingAnchor.constraint(equalTo: contentView.trailingAnchor, constant: -20),
+
+            logoImageView.centerXAnchor.constraint(equalTo: contentView.centerXAnchor),
             logoImageView.centerYAnchor.constraint(equalTo: menuButton.centerYAnchor),
-            logoImageView.leadingAnchor.constraint(greaterThanOrEqualTo: menuButton.trailingAnchor, constant: 20),
-            logoImageView.trailingAnchor.constraint(lessThanOrEqualTo: homeButton.leadingAnchor, constant: -20),
-            logoImageView.centerXAnchor.constraint(equalTo: view.centerXAnchor),
             logoImageView.heightAnchor.constraint(equalToConstant: 40),
-            
-            // Title
-            titleLabel.topAnchor.constraint(equalTo: logoImageView.bottomAnchor, constant: 40),
-            titleLabel.centerXAnchor.constraint(equalTo: view.centerXAnchor),
-            
-            // Site Image
-            // Slider ScrollView
+
+            titleLabel.topAnchor.constraint(equalTo: logoImageView.bottomAnchor, constant: 28),
+            titleLabel.centerXAnchor.constraint(equalTo: contentView.centerXAnchor),
+
             sliderScrollView.topAnchor.constraint(equalTo: titleLabel.bottomAnchor, constant: 20),
-            sliderScrollView.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: 24),
-            sliderScrollView.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -24),
+            sliderScrollView.leadingAnchor.constraint(equalTo: contentView.leadingAnchor, constant: 20),
+            sliderScrollView.trailingAnchor.constraint(equalTo: contentView.trailingAnchor, constant: -20),
             sliderScrollView.heightAnchor.constraint(equalToConstant: 180),
 
-            // Page Control
-            sliderPageControl.topAnchor.constraint(equalTo: sliderScrollView.bottomAnchor, constant: 6),
-            sliderPageControl.centerXAnchor.constraint(equalTo: view.centerXAnchor),
+            pageControl.topAnchor.constraint(equalTo: sliderScrollView.bottomAnchor, constant: 8),
+            pageControl.centerXAnchor.constraint(equalTo: contentView.centerXAnchor),
 
-            
-            // Progress Bar
-            progressStackView.topAnchor.constraint(equalTo: sliderPageControl.bottomAnchor, constant: 40),
-            progressStackView.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: 16),
-            progressStackView.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -16),
-            progressStackView.heightAnchor.constraint(equalToConstant: 38),
-            
-            // Stages Title
-            stagesTitleLabel.topAnchor.constraint(equalTo: progressStackView.bottomAnchor, constant: 40),
-            stagesTitleLabel.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: 20),
-            
-            // Stage Grid
-            stageStackView.topAnchor.constraint(equalTo: stagesTitleLabel.bottomAnchor, constant: 14),
-            stageStackView.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: 20),
-            stageStackView.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -20),
-            stageStackView.bottomAnchor.constraint(lessThanOrEqualTo: view.safeAreaLayoutGuide.bottomAnchor, constant: -30)
+            progressStackView.topAnchor.constraint(equalTo: pageControl.bottomAnchor, constant: 24),
+            progressStackView.leadingAnchor.constraint(equalTo: contentView.leadingAnchor, constant: 20),
+            progressStackView.trailingAnchor.constraint(equalTo: contentView.trailingAnchor, constant: -20),
+            progressStackView.heightAnchor.constraint(equalToConstant: 36),
+
+            stagesTitleLabel.topAnchor.constraint(equalTo: progressStackView.bottomAnchor, constant: 30),
+            stagesTitleLabel.leadingAnchor.constraint(equalTo: contentView.leadingAnchor, constant: 20),
+
+            stageGridStack.topAnchor.constraint(equalTo: stagesTitleLabel.bottomAnchor, constant: 20),
+            stageGridStack.leadingAnchor.constraint(equalTo: contentView.leadingAnchor, constant: 20),
+            stageGridStack.trailingAnchor.constraint(equalTo: contentView.trailingAnchor, constant: -20),
+            stageGridStack.bottomAnchor.constraint(equalTo: contentView.bottomAnchor, constant: -40)
         ])
     }
-
-    // MARK: - Side Menu Setup
-    // MARK: - Side Menu Setup
-    private func setupMenu() {
-        // Dimmed background
-        dimmedView = UIView(frame: view.bounds)
-        dimmedView.backgroundColor = UIColor.black.withAlphaComponent(0.3)
-        dimmedView.alpha = 0
-        let tapToClose = UITapGestureRecognizer(target: self, action: #selector(toggleSideMenu))
-        dimmedView.addGestureRecognizer(tapToClose)
-        view.addSubview(dimmedView)
-        
-        // Side menu container
-        sideMenuView = UIView(frame: CGRect(x: -240, y: 0, width: 240, height: view.frame.height))
-        sideMenuView.backgroundColor = .white
-        sideMenuView.layer.shadowColor = UIColor.black.cgColor
-        sideMenuView.layer.shadowOpacity = 0.3
-        sideMenuView.layer.shadowOffset = CGSize(width: 3, height: 0)
-        sideMenuView.layer.shadowRadius = 5
-        
-        // 1) Welcome heading
-        let welcomeLabel = UILabel(frame: CGRect(x: 20, y: 60, width: 200, height: 30))
-        welcomeLabel.text = "Suncity"
-        welcomeLabel.font = UIFont(name: "Montserrat-SemiBold", size: 24)
-        welcomeLabel.textColor = .black
-        welcomeLabel.textAlignment = .center
-        sideMenuView.addSubview(welcomeLabel)
-        
-        // 2) Services button
-        let enquireButton = UIButton(type: .system)
-        enquireButton.setTitle("Enquiry", for: .normal)
-        enquireButton.setTitleColor(.black, for: .normal)
-        enquireButton.contentHorizontalAlignment = .left
-        enquireButton.titleLabel?.font = UIFont(name: "Montserrat-Regular", size: 16)
-        enquireButton.frame = CGRect(x: 20, y: welcomeLabel.frame.maxY + 40, width: 200, height: 40)
-        enquireButton.addTarget(self, action: #selector(openContactUs), for: .touchUpInside)
-        sideMenuView.addSubview(enquireButton)
-        
-        // Divider line between Services and Contact Us
-        let divider = UIView(
-            frame: CGRect(
-                x: 20,
-                y: enquireButton.frame.maxY + 8,
-                width: sideMenuView.frame.width - 40,
-                height: 0.5
-            )
+    
+    private func updateWelcomeTitle() {
+        titleLabel.attributedText = AppStyle.headerTitle(
+            firstPart: "Welcome To",
+            secondPart: estateName.capitalized
         )
-        divider.backgroundColor = UIColor.black.withAlphaComponent(0.6)
-        sideMenuView.addSubview(divider)
-        
-        // 3) Contact Us button
-        let contactButton = UIButton(type: .system)
-        contactButton.setTitle("Contact Us", for: .normal)
-        contactButton.setTitleColor(.black, for: .normal)
-        contactButton.contentHorizontalAlignment = .left
-        contactButton.titleLabel?.font = UIFont(name: "Montserrat-Regular", size: 16)
-        contactButton.frame = CGRect(x: 20, y: divider.frame.maxY + 8, width: 200, height: 40)
-       // contactButton.addTarget(self, action: #selector(openContactUs), for: .touchUpInside)
-        sideMenuView.addSubview(contactButton)
-        
-        // 4) Version label at bottom (auto from Info.plist)
-        // Version label centered at bottom
-        let versionLabel = UILabel()
-        let version = Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "1.0"
-
-        versionLabel.text = "Version \(version)"
-        versionLabel.font = UIFont(name: "Montserrat-Bold", size: 12)
-        versionLabel.textColor = .black
-        versionLabel.textAlignment = .center
-        versionLabel.translatesAutoresizingMaskIntoConstraints = false
-
-        sideMenuView.addSubview(versionLabel)
-
-        // Constraints to center it horizontally and place near bottom
-        NSLayoutConstraint.activate([
-            versionLabel.centerXAnchor.constraint(equalTo: sideMenuView.centerXAnchor),
-            versionLabel.bottomAnchor.constraint(equalTo: sideMenuView.bottomAnchor, constant: -30),
-            versionLabel.widthAnchor.constraint(equalTo: sideMenuView.widthAnchor) // allows full-width centering
-        ])
-
-        // Finally add menu to main view
-        view.addSubview(sideMenuView)
-    }
-    
-    @objc private func openContactUs() {
-        toggleSideMenu() // close menu smoothly
-        let enquiryVC = EnquiryViewController()
-        navigationController?.pushViewController(enquiryVC, animated: true)
     }
 
-    @objc private func toggleSideMenu() {
-        UIView.animate(withDuration: 0.3) {
-            if self.sideMenuVisible {
-                self.sideMenuView.frame.origin.x = -240
-                self.dimmedView.alpha = 0
-            } else {
-                self.sideMenuView.frame.origin.x = 0
-                self.dimmedView.alpha = 1
-            }
+
+    // MARK: - Phase Bar
+    private func setupPhaseBar() {
+        ["Discovery", "Planning", "Execution", "Result"].forEach {
+            let lbl = UILabel()
+            lbl.text = $0
+            lbl.textAlignment = .center
+            lbl.font = UIFont(name: "Montserrat-Bold", size: 13)
+            lbl.backgroundColor = $0 == "Planning" ? AppStyle.Colors.yellow : AppStyle.Colors.grey
+            lbl.layer.cornerRadius = 6
+            lbl.clipsToBounds = true
+            progressStackView.addArrangedSubview(lbl)
         }
-        sideMenuVisible.toggle()
     }
 
-    @objc private func goHome() {
-        let homeVC = HomeViewController()
-        navigationController?.pushViewController(homeVC, animated: true)
-    }
-    
-    private func setupImageSlider() {
-        let images = (1...5).map { _ in UIImage(named: "site_image")! }
+    // MARK: - Slider
+    private func setupSlider() {
+        sliderScrollView.isPagingEnabled = true
+        sliderScrollView.showsHorizontalScrollIndicator = false
 
+        let images = (1...5).compactMap { _ in UIImage(named: "site_image") }
         sliderScrollView.contentSize = CGSize(width: view.frame.width * CGFloat(images.count), height: 180)
+        pageControl.numberOfPages = images.count
 
-        for (index, img) in images.enumerated() {
-            let imgView = UIImageView(image: img)
-            imgView.contentMode = .scaleAspectFill
-            imgView.clipsToBounds = true
-            imgView.layer.cornerRadius = 12
-            imgView.frame = CGRect(
-                x: CGFloat(index) * view.frame.width,
-                y: 0,
-                width: view.frame.width,
-                height: 180
-            )
-            sliderScrollView.addSubview(imgView)
-        }
-
-        sliderScrollView.delegate = self
-    }
-
-    private func startAutoSlider() {
-        sliderTimer?.invalidate() // Clear old timer if exists
-        
-        sliderTimer = Timer.scheduledTimer(withTimeInterval: 3.0, repeats: true) { _ in
-            self.moveToNextSlide()
-        }
-    }
-    private func moveToNextSlide() {
-        let totalSlides = 5
-        currentSlideIndex += 1
-        
-        if currentSlideIndex == totalSlides {
-            currentSlideIndex = 0  // loop back to first slide
-        }
-
-        let xOffset = CGFloat(currentSlideIndex) * self.view.frame.width
-
-        sliderScrollView.setContentOffset(CGPoint(x: xOffset, y: 0), animated: true)
-        sliderPageControl.currentPage = currentSlideIndex
-    }
-
-
-    // MARK: - Data
-    private func loadDataFromService() {
-        setupProgressBar(currentStage: "Planning")
-        DispatchQueue.main.asyncAfter(deadline: .now() + 1) {
-            self.stages = [
-                Stage(id: 1, name: "STAGE 01", color: AppStyle.Colors.yellow),
-                Stage(id: 2, name: "STAGE 02", color: AppStyle.Colors.yellow),
-                Stage(id: 3, name: "STAGE 03", color: .black),
-                Stage(id: 4, name: "STAGE 04", color: AppStyle.Colors.grey),
-                Stage(id: 5, name: "STAGE 05", color: AppStyle.Colors.grey),
-                Stage(id: 6, name: "STAGE 06", color: AppStyle.Colors.grey)
-            ]
-            self.setupStageGrid()
+        for (i, img) in images.enumerated() {
+            let iv = UIImageView(image: img)
+            iv.frame = CGRect(x: CGFloat(i) * view.frame.width, y: 0,
+                              width: view.frame.width, height: 180)
+            iv.layer.cornerRadius = 12
+            iv.clipsToBounds = true
+            iv.contentMode = .scaleAspectFill
+            sliderScrollView.addSubview(iv)
         }
     }
 
-    private func setupProgressBar(currentStage: String) {
-        progressStackView.arrangedSubviews.forEach { $0.removeFromSuperview() }
-
-        let stages = ["Discovery", "Planning", "Execution", "Result"]
-
-        for stage in stages {
-            let label = UILabel()
-            label.text = "  \(stage)  "
-            label.textAlignment = .center
-            label.font = UIFont(name: "Montserrat-Bold", size: 13)
-            label.layer.cornerRadius = 6
-            label.clipsToBounds = true
-
-            if stage == currentStage {
-                label.backgroundColor = AppStyle.Colors.yellow
-                label.textColor = .black
-            } else {
-                label.backgroundColor = AppStyle.Colors.grey
-                label.textColor = .black
-            }
-            progressStackView.addArrangedSubview(label)
-        }
-    }
-
-    private func setupStageGrid() {
-        stageStackView.arrangedSubviews.forEach { $0.removeFromSuperview() }
+    // MARK: - Stage Grid
+    private func buildStageGrid() {
+        stageGridStack.arrangedSubviews.forEach { $0.removeFromSuperview() }
 
         let columns = 3
-        var currentRow: UIStackView?
+        var row: UIStackView?
 
         for (index, stage) in stages.enumerated() {
             if index % columns == 0 {
-                currentRow = UIStackView()
-                currentRow?.axis = .horizontal
-                currentRow?.distribution = .fillEqually
-                currentRow?.spacing = 12
-                currentRow?.translatesAutoresizingMaskIntoConstraints = false
-                stageStackView.addArrangedSubview(currentRow!)
+                row = UIStackView()
+                row?.axis = .horizontal
+                row?.spacing = 12
+                row?.distribution = .fillEqually
+                stageGridStack.addArrangedSubview(row!)
             }
+            row?.addArrangedSubview(stageCard(stage))
 
-            if let row = currentRow {
-                let stageView = createStageCard(for: stage)
-                stageView.widthAnchor.constraint(equalToConstant: (view.frame.width - 64) / 3).isActive = true
-                row.addArrangedSubview(stageView)
+            if index == stages.count - 1 {
+                let remaining = columns - ((index % columns) + 1)
+                for _ in 0..<remaining {
+                    row?.addArrangedSubview(UIView())
+                }
             }
         }
     }
 
-    private func createStageCard(for stage: Stage) -> UIView {
-        let card = UIView()
-        card.layer.cornerRadius = 10
-        card.backgroundColor = stage.color
-        card.heightAnchor.constraint(equalToConstant: 80).isActive = true
-        card.tag = stage.id
-        card.isUserInteractionEnabled = true
+    private func stageCard(_ stage: Stage) -> UIView {
+        let v = UIView()
+        v.backgroundColor = stage.color
+        v.layer.cornerRadius = 12
+        v.heightAnchor.constraint(equalToConstant: 90).isActive = true
+        v.tag = stage.id
 
-        let tap = UITapGestureRecognizer(target: self, action: #selector(handleStageTap(_:)))
-        card.addGestureRecognizer(tap)
+        let lbl = UILabel()
+        lbl.text = stage.name
+        lbl.font = UIFont(name: "Montserrat-Bold", size: 14)
+        lbl.textAlignment = .center
+        lbl.translatesAutoresizingMaskIntoConstraints = false
 
-        let label = UILabel()
-        label.text = stage.name
-        label.textAlignment = .center
-        label.textColor = stage.color == .black ? .white : .black
-        label.font = UIFont(name: "Montserrat-Bold", size: 14)
-        label.translatesAutoresizingMaskIntoConstraints = false
-
-        card.addSubview(label)
+        v.addSubview(lbl)
         NSLayoutConstraint.activate([
-            label.centerXAnchor.constraint(equalTo: card.centerXAnchor),
-            label.centerYAnchor.constraint(equalTo: card.centerYAnchor)
+            lbl.centerXAnchor.constraint(equalTo: v.centerXAnchor),
+            lbl.centerYAnchor.constraint(equalTo: v.centerYAnchor)
         ])
 
-        return card
+        v.addGestureRecognizer(UITapGestureRecognizer(
+            target: self,
+            action: #selector(stageTapped(_:))
+        ))
+        return v
     }
 
-    @objc private func handleStageTap(_ sender: UITapGestureRecognizer) {
-        guard let selectedCard = sender.view else { return }
-        selectedStageIndex = selectedCard.tag
-        print("Stage tapped: \(selectedStageIndex ?? -1)")
-
-        // highlight selection
-        for row in stageStackView.arrangedSubviews {
-            guard let rowStack = row as? UIStackView else { continue }
-            for view in rowStack.arrangedSubviews {
-                view.layer.borderWidth = (view.tag == selectedStageIndex) ? 3 : 0
-                view.layer.borderColor = (view.tag == selectedStageIndex) ? UIColor.systemBlue.cgColor : nil
-            }
-        }
-
-        // push detail screen
-        if let id = selectedStageIndex {
-            let detailVC = StageDetailViewController(stages: stages, currentStageId: id)
-            navigationController?.pushViewController(detailVC, animated: true)
-        }
+    @objc private func stageTapped(_ g: UITapGestureRecognizer) {
+        guard let id = g.view?.tag else { return }
+        let vc = StageDetailViewController(stages: stages, currentStageId: id)
+        navigationController?.pushViewController(vc, animated: true)
     }
-
-
 }
-
-extension SuncityViewController: UIScrollViewDelegate {
-    func scrollViewDidEndDecelerating(_ scrollView: UIScrollView) {
-        let pageIndex = Int(scrollView.contentOffset.x / view.frame.width)
-        currentSlideIndex = pageIndex
-        sliderPageControl.currentPage = pageIndex
-    }
-
-}
-
-

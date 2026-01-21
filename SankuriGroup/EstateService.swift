@@ -20,6 +20,39 @@ struct Estate: Decodable {
     }
 }
 
+// MARK: - Estate Details Models
+
+struct EstateDetailsResponse: Decodable {
+    let name: String
+    let estateStages: [EstateStage]
+
+    enum CodingKeys: String, CodingKey {
+        case name = "Name"
+        case estateStages = "EstateStages"
+    }
+}
+
+struct EstateStage: Decodable {
+    let stageId: Int
+    let stage: StageDetails
+
+    enum CodingKeys: String, CodingKey {
+        case stageId = "StageId"
+        case stage = "Stage"
+    }
+}
+
+struct StageDetails: Decodable {
+    let number: Int
+    let description: String?
+
+    enum CodingKeys: String, CodingKey {
+        case number = "Number"
+        case description = "Description"
+    }
+}
+
+
 
 // MARK: - Network Service
 final class EstateService {
@@ -27,7 +60,7 @@ final class EstateService {
     static let shared = EstateService()
     private init() {}
 
-    private let baseURL = "https://sunkuri.azurewebsites.net/api/estate/getallestates" // 🔴 replace
+    private let baseURL = "https://sunkuri.azurewebsites.net/api/estate/getallestates"
 
     func fetchEstates(completion: @escaping (Result<[Estate], Error>) -> Void) {
 
@@ -57,11 +90,12 @@ final class EstateService {
         }.resume()
     }
     
-    func getEstateDetails(
+    // Get Estate & Stages count by estate ID
+    func getEstateById(
         estateId: Int,
-        completion: @escaping (Result<Estate, Error>) -> Void
+        completion: @escaping (Result<EstateDetailsResponse, Error>) -> Void
     ) {
-        let urlString = "https://sunkuri.azurewebsites.net/api/estate/getallestates/\(estateId)"
+        let urlString = "https://sunkuri.azurewebsites.net/api/estate/getbyid/\(estateId)"
         guard let url = URL(string: urlString) else { return }
 
         URLSession.shared.dataTask(with: url) { data, _, error in
@@ -76,9 +110,9 @@ final class EstateService {
             guard let data else { return }
 
             do {
-                let estate = try JSONDecoder().decode(Estate.self, from: data)
+                let response = try JSONDecoder().decode(EstateDetailsResponse.self, from: data)
                 DispatchQueue.main.async {
-                    completion(.success(estate))
+                    completion(.success(response))
                 }
             } catch {
                 DispatchQueue.main.async {
@@ -88,6 +122,7 @@ final class EstateService {
 
         }.resume()
     }
+
 
 }
 
