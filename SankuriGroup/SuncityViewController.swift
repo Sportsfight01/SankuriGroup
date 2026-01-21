@@ -14,6 +14,9 @@ struct Stage {
 }
 
 class SuncityViewController: UIViewController {
+    
+    var estateId: Int?   // ✅ ADD THIS LINE
+
 
     private var stages: [Stage] = []
     private var selectedStageIndex: Int? = nil
@@ -22,6 +25,7 @@ class SuncityViewController: UIViewController {
     private var dimmedView: UIView!
     private var sliderTimer: Timer?
     private var currentSlideIndex = 0
+    
 
 
 
@@ -117,6 +121,15 @@ class SuncityViewController: UIViewController {
         super.viewDidLoad()
         view.backgroundColor = AppStyle.Colors.bodyBackground
         navigationItem.hidesBackButton = true
+        
+        guard let estateId else {
+                    print("❌ estateId not received")
+                    return
+                }
+
+                print("✅ estateId received:", estateId)
+                fetchEstateDetails(id: estateId)
+        
         setupUI()
         setupImageSlider()
         startAutoSlider()
@@ -127,6 +140,23 @@ class SuncityViewController: UIViewController {
     override func viewWillAppear(_ animated: Bool) {
         super.viewWillAppear(animated)
         navigationController?.setNavigationBarHidden(true, animated: true)
+    }
+
+    private func fetchEstateDetails(id: Int) {
+        EstateService.shared.getEstateDetails(estateId: id) { [weak self] result in
+            DispatchQueue.main.async {
+                switch result {
+                case .success(let estate):
+                    print("✅ Estate details received:", estate)
+
+                    // TODO: update UI here
+                    // self?.updateUI(with: estate)
+
+                case .failure(let error):
+                    print("❌ Failed to fetch estate details:", error.localizedDescription)
+                }
+            }
+        }
     }
 
 
