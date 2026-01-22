@@ -7,14 +7,14 @@
 
 import UIKit
 
-class TimelineCell: UITableViewCell {
+final class TimelineCell: UITableViewCell {
 
     static let identifier = "TimelineCell"
 
-    let bgView = UIView()
-    let titleLabel = UILabel()
-    let dateLabel = UILabel()
-    let statusImageView = UIImageView()
+    private let containerView = UIView()
+    private let titleLabel = UILabel()
+    private let dateLabel = UILabel()
+    private let statusImageView = UIImageView()
 
     override init(style: UITableViewCell.CellStyle, reuseIdentifier: String?) {
         super.init(style: style, reuseIdentifier: reuseIdentifier)
@@ -22,83 +22,62 @@ class TimelineCell: UITableViewCell {
     }
 
     required init?(coder: NSCoder) {
-        fatalError("init(coder:) has not been implemented")
+        super.init(coder: coder)
+        setupUI()
     }
 
     private func setupUI() {
         backgroundColor = .clear
         selectionStyle = .none
 
-        bgView.layer.cornerRadius = 16
-        bgView.translatesAutoresizingMaskIntoConstraints = false
+        containerView.layer.cornerRadius = 16
+        containerView.translatesAutoresizingMaskIntoConstraints = false
 
         titleLabel.font = UIFont(name: "Montserrat-SemiBold", size: 16)
-        titleLabel.textColor = .black
-        titleLabel.translatesAutoresizingMaskIntoConstraints = false
-
-        dateLabel.font = UIFont(name: "Montserrat-Regular", size: 12)
+        dateLabel.font = UIFont(name: "Montserrat-Regular", size: 13)
         dateLabel.textColor = .darkGray
-        dateLabel.translatesAutoresizingMaskIntoConstraints = false
 
         statusImageView.translatesAutoresizingMaskIntoConstraints = false
-        statusImageView.contentMode = .scaleAspectFit
 
-        contentView.addSubview(bgView)
-        bgView.addSubview(titleLabel)
-        bgView.addSubview(dateLabel)
-        bgView.addSubview(statusImageView)
+        let stack = UIStackView(arrangedSubviews: [titleLabel, dateLabel])
+        stack.axis = .vertical
+        stack.spacing = 4
+        stack.translatesAutoresizingMaskIntoConstraints = false
+
+        containerView.addSubview(stack)
+        containerView.addSubview(statusImageView)
+        contentView.addSubview(containerView)
 
         NSLayoutConstraint.activate([
-            bgView.topAnchor.constraint(equalTo: contentView.topAnchor, constant: 8),
-            bgView.leadingAnchor.constraint(equalTo: contentView.leadingAnchor, constant: 20),
-            bgView.trailingAnchor.constraint(equalTo: contentView.trailingAnchor, constant: -20),
-            bgView.bottomAnchor.constraint(equalTo: contentView.bottomAnchor, constant: -8),
+            containerView.leadingAnchor.constraint(equalTo: contentView.leadingAnchor, constant: 16),
+            containerView.trailingAnchor.constraint(equalTo: contentView.trailingAnchor, constant: -16),
+            containerView.topAnchor.constraint(equalTo: contentView.topAnchor, constant: 8),
+            containerView.bottomAnchor.constraint(equalTo: contentView.bottomAnchor, constant: -8),
 
-            // ICON on the LEFT MIDDLE
-            statusImageView.centerYAnchor.constraint(equalTo: bgView.centerYAnchor),
-            statusImageView.leadingAnchor.constraint(equalTo: bgView.leadingAnchor, constant: 20),
+            statusImageView.leadingAnchor.constraint(equalTo: containerView.leadingAnchor, constant: 16),
+            statusImageView.centerYAnchor.constraint(equalTo: containerView.centerYAnchor),
             statusImageView.widthAnchor.constraint(equalToConstant: 28),
             statusImageView.heightAnchor.constraint(equalToConstant: 28),
 
-            // TITLE to the right of the icon
-            titleLabel.topAnchor.constraint(equalTo: bgView.topAnchor, constant: 16),
-            titleLabel.leadingAnchor.constraint(equalTo: statusImageView.trailingAnchor, constant: 16),
-            titleLabel.trailingAnchor.constraint(equalTo: bgView.trailingAnchor, constant: -20),
-
-            // DATE under title
-            dateLabel.topAnchor.constraint(equalTo: titleLabel.bottomAnchor, constant: 4),
-            dateLabel.leadingAnchor.constraint(equalTo: titleLabel.leadingAnchor),
-            dateLabel.trailingAnchor.constraint(equalTo: bgView.trailingAnchor, constant: -20),
-            dateLabel.bottomAnchor.constraint(equalTo: bgView.bottomAnchor, constant: -16)
+            stack.leadingAnchor.constraint(equalTo: statusImageView.trailingAnchor, constant: 16),
+            stack.trailingAnchor.constraint(equalTo: containerView.trailingAnchor, constant: -16),
+            stack.centerYAnchor.constraint(equalTo: containerView.centerYAnchor)
         ])
-
     }
 
     func configure(with item: TimelineItem) {
         titleLabel.text = item.name
-        dateLabel.text  = item.date
+        dateLabel.text = item.date
 
-        // Colours by status
         switch item.status {
         case .completed:
-            bgView.backgroundColor = AppStyle.Colors.yellow
-            titleLabel.textColor = .black
-            dateLabel.textColor = .black
-            statusImageView.image = UIImage(named: "status_completed")
-
-        case .inProgress:
-            bgView.backgroundColor = .black
-            titleLabel.textColor = .white
-            dateLabel.textColor = .white
-            statusImageView.image = UIImage(named: "status_inprogress")
-
-
+            containerView.backgroundColor = AppStyle.Colors.yellow
+            statusImageView.image = UIImage(systemName: "checkmark.circle.fill")
+            statusImageView.tintColor = .systemBlue
         case .pending:
-            bgView.backgroundColor = AppStyle.Colors.grey
-            titleLabel.textColor = .black
-            dateLabel.textColor = .black
-            statusImageView.image = UIImage(named: "status_pending")
-
+            containerView.backgroundColor = .black
+            statusImageView.image = UIImage(systemName: "ellipsis.circle")
+            statusImageView.tintColor = .systemBlue
         }
     }
 }

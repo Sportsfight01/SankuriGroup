@@ -276,35 +276,51 @@ class SuncityViewController: UIViewController {
 
     private func stageCard(_ stage: Stage) -> UIView {
         let v = UIView()
+        v.translatesAutoresizingMaskIntoConstraints = false
         v.backgroundColor = stage.color
-        v.layer.cornerRadius = 12
-        v.heightAnchor.constraint(equalToConstant: 90).isActive = true
-        v.tag = stage.id
+        v.layer.cornerRadius = 14
 
-        let lbl = UILabel()
-        lbl.text = stage.name
-        lbl.font = UIFont(name: "Montserrat-Bold", size: 14)
-        lbl.textAlignment = .center
-        lbl.translatesAutoresizingMaskIntoConstraints = false
+        v.tag = stage.id          // ✅ StageId (156, 155, etc)
+        v.isUserInteractionEnabled = true
 
-        v.addSubview(lbl)
+        let label = UILabel()
+        label.text = stage.name
+        label.font = UIFont(name: "Montserrat-Bold", size: 16)
+        label.textAlignment = .center
+        label.translatesAutoresizingMaskIntoConstraints = false
+
+        v.addSubview(label)
+
         NSLayoutConstraint.activate([
-            lbl.centerXAnchor.constraint(equalTo: v.centerXAnchor),
-            lbl.centerYAnchor.constraint(equalTo: v.centerYAnchor)
+            label.centerXAnchor.constraint(equalTo: v.centerXAnchor),
+            label.centerYAnchor.constraint(equalTo: v.centerYAnchor),
+            v.heightAnchor.constraint(equalToConstant: 90)
         ])
 
-        v.addGestureRecognizer(UITapGestureRecognizer(
-            target: self,
-            action: #selector(stageTapped(_:))
-        ))
+        v.addGestureRecognizer(
+            UITapGestureRecognizer(
+                target: self,
+                action: #selector(stageTapped(_:))
+            )
+        )
+
         return v
     }
 
+
+
     @objc private func stageTapped(_ g: UITapGestureRecognizer) {
-        guard let id = g.view?.tag else { return }
-        let vc = StageDetailViewController(stages: stages, currentStageId: id)
+        guard let stageId = g.view?.tag else { return }
+        guard let estateId = estateId else { return }
+
+        let vc = StageDetailViewController(
+            estateId: estateId,
+            stageId: stageId
+        )
         navigationController?.pushViewController(vc, animated: true)
     }
+
+    
 }
 
 

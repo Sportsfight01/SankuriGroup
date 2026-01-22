@@ -126,3 +126,99 @@ final class EstateService {
 
 }
 
+// MARK: - Stage Details Models
+
+struct StageDetailResponse: Decodable {
+    let phases: [StagePhase]
+
+    enum CodingKeys: String, CodingKey {
+        case phases = "Phases"
+    }
+}
+
+struct StagePhase: Decodable {
+    let name: String
+    let phaseWorkItems: [PhaseWorkItem]
+
+    enum CodingKeys: String, CodingKey {
+        case name = "Name"
+        case phaseWorkItems = "PhaseWorkItems"
+    }
+}
+
+struct PhaseWorkItem: Decodable {
+    let name: String
+    let isCompleted: Bool?
+
+    enum CodingKeys: String, CodingKey {
+        case name = "Name"
+        case isCompleted = "IsCompleted"
+    }
+}
+
+// MARK: - API
+
+extension EstateService {
+
+    func fetchStageDetails(
+        estateId: Int,
+        stageId: Int,
+        completion: @escaping (Result<StageDetailResponse, Error>) -> Void
+    ) {
+        let urlString =
+        "https://sunkuri.azurewebsites.net/api/estate/getstageDetails/\(estateId)/\(stageId)"
+
+        guard let url = URL(string: urlString) else { return }
+
+        URLSession.shared.dataTask(with: url) { data, _, error in
+            if let error {
+                completion(.failure(error))
+                return
+            }
+
+            guard let data else { return }
+
+            do {
+                let response = try JSONDecoder().decode(StageDetailResponse.self, from: data)
+                completion(.success(response))
+            } catch {
+                completion(.failure(error))
+            }
+        }.resume()
+    }
+    
+    func getStageDetails(
+        estateId: Int,
+        stageId: Int,
+        completion: @escaping (Result<StageDetailResponse, Error>) -> Void
+    ) {
+        let urlString = "https://sunkuri.azurewebsites.net/api/estate/getstageDetails/\(estateId)/\(stageId)"
+        guard let url = URL(string: urlString) else { return }
+
+        URLSession.shared.dataTask(with: url) { data, _, error in
+            if let error = error {
+                DispatchQueue.main.async {
+                    completion(.failure(error))
+                }
+                return
+            }
+
+            guard let data = data else { return }
+
+            do {
+                let decoded = try JSONDecoder().decode(StageDetailResponse.self, from: data)
+                DispatchQueue.main.async {
+                    completion(.success(decoded))
+                }
+            } catch {
+                DispatchQueue.main.async {
+                    completion(.failure(error))
+                }
+            }
+        }.resume()
+    }
+    
+
+}
+
+
