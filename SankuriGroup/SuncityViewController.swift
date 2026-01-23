@@ -153,6 +153,9 @@ class SuncityViewController: UIViewController {
 
         menuButton.setImage(UIImage(systemName: "line.3.horizontal"), for: .normal)
         homeButton.setImage(UIImage(systemName: "house.fill"), for: .normal)
+        
+        menuButton.tintColor = .black
+        homeButton.tintColor = .black
 
 //        titleLabel.attributedText = AppStyle.headerTitle(
 //            firstPart: "Welcome To",
@@ -285,7 +288,7 @@ class SuncityViewController: UIViewController {
 
         let label = UILabel()
         label.text = stage.name
-        label.font = UIFont(name: "Montserrat-Bold", size: 16)
+        label.font = UIFont(name: "Montserrat-SemiBold", size: 14)
         label.textAlignment = .center
         label.translatesAutoresizingMaskIntoConstraints = false
 

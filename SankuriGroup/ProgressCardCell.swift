@@ -19,6 +19,9 @@ final class ProgressCardCell: UICollectionViewCell {
 
     private let rightTitleLabel = UILabel()
     private let rightValueLabel = UILabel()
+    
+    private let phaseLabel = UILabel()
+
 
     private let circle = CircularProgressView()
 
@@ -75,10 +78,17 @@ final class ProgressCardCell: UICollectionViewCell {
         rightStack.addArrangedSubview(rightValueLabel)
 
         circle.translatesAutoresizingMaskIntoConstraints = false
+        
+        phaseLabel.font = UIFont(name: "Montserrat-SemiBold", size: 16)
+        phaseLabel.textColor = .black
+        phaseLabel.textAlignment = .center
+        phaseLabel.translatesAutoresizingMaskIntoConstraints = false
+
 
         contentView.addSubview(leftStack)
         contentView.addSubview(rightStack)
         contentView.addSubview(circle)
+        contentView.addSubview(phaseLabel)
 
         NSLayoutConstraint.activate([
             leftStack.topAnchor.constraint(equalTo: contentView.topAnchor, constant: 10),
@@ -91,14 +101,28 @@ final class ProgressCardCell: UICollectionViewCell {
             circle.centerXAnchor.constraint(equalTo: contentView.centerXAnchor),
             circle.widthAnchor.constraint(equalToConstant: 160),
             circle.heightAnchor.constraint(equalToConstant: 160),
-            circle.bottomAnchor.constraint(equalTo: contentView.bottomAnchor, constant: -20)
         ])
+        
+        NSLayoutConstraint.activate([
+            phaseLabel.topAnchor.constraint(equalTo: circle.bottomAnchor, constant: 12),
+            phaseLabel.centerXAnchor.constraint(equalTo: contentView.centerXAnchor),
+            phaseLabel.bottomAnchor.constraint(equalTo: contentView.bottomAnchor, constant: -16)
+        ])
+
     }
 
-    func configure(leftTitle: String, leftValue: String, stageNumber: String, progress: CGFloat) {
+    func configure(
+        leftTitle: String,
+        leftValue: String,
+        stageNumber: String,
+        phaseName: String,
+        progress: CGFloat
+    ) {
         leftTitleLabel.text = leftTitle
         leftValueLabel.text = leftValue
         rightValueLabel.text = stageNumber
+        phaseLabel.text = phaseName
         circle.progress = progress
     }
+
 }

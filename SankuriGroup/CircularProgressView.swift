@@ -80,7 +80,7 @@ final class CircularProgressView: UIView {
         setProgress(progress)
     }
 
-    private func setProgress(_ value: CGFloat) {
+     func setProgress(_ value: CGFloat) {
         let clamped = min(max(value, 0), 1)
         progressLayer.strokeEnd = clamped
         percentageLabel.text = "\(Int(clamped * 100))%"

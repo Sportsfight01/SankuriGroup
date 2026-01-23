@@ -73,11 +73,19 @@ final class TimelineCell: UITableViewCell {
         case .completed:
             containerView.backgroundColor = AppStyle.Colors.yellow
             statusImageView.image = UIImage(systemName: "checkmark.circle.fill")
-            statusImageView.tintColor = .systemBlue
+            statusImageView.tintColor = .black
+            titleLabel.textColor = .black
+            dateLabel.textColor = .black
+
+
         case .pending:
             containerView.backgroundColor = .black
             statusImageView.image = UIImage(systemName: "ellipsis.circle")
-            statusImageView.tintColor = .systemBlue
+            statusImageView.tintColor = .white
+            titleLabel.textColor = .white
+            dateLabel.textColor = .white
+
+
         }
     }
 }

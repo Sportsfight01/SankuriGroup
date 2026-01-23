@@ -13,16 +13,24 @@ final class StageDetailViewController: UIViewController {
     private let estateId: Int
     private let stageId: Int
 
-    // MARK: - UI
-    private let tableView = UITableView(frame: .zero, style: .grouped)
+    // MARK: - Header
+    private let headerView = UIView()
+    private let backButton = UIButton(type: .system)
+    private let logoImageView = UIImageView()
 
-    // Header (Progress)
-    private let civilProgressView = CircularProgressView()
-    private let registrationProgressView = CircularProgressView()
+    // MARK: - Overview
+    private let overviewLabel = UILabel()
+
+    // MARK: - Progress Cards
+    private var collectionView: UICollectionView!
+    private let pageControl = UIPageControl()
+
+    // MARK: - Timeline
+    private let tableView = UITableView(frame: .zero, style: .plain)
 
     // MARK: - Data
-    private var civilItems: [TimelineItem] = []
-    private var registrationItems: [TimelineItem] = []
+    private var phases: [StagePhase] = []
+    private var selectedPhaseIndex: Int = 0
 
     // MARK: - Init
     init(estateId: Int, stageId: Int) {
@@ -39,16 +47,123 @@ final class StageDetailViewController: UIViewController {
     override func viewDidLoad() {
         super.viewDidLoad()
         view.backgroundColor = .systemBackground
+
+        setupHeader()
+        setupOverview()
+        setupCollectionView()
+        setupPageControl()
         setupTableView()
         fetchStageDetails()
     }
 
-    // MARK: - Setup
+    // MARK: - Header
+    private func setupHeader() {
+        headerView.translatesAutoresizingMaskIntoConstraints = false
+        view.addSubview(headerView)
+
+        backButton.setImage(UIImage(systemName: "chevron.left"), for: .normal)
+        backButton.tintColor = .black
+        backButton.addTarget(self, action: #selector(backTapped), for: .touchUpInside)
+        backButton.translatesAutoresizingMaskIntoConstraints = false
+
+        logoImageView.image = UIImage(named: "suncity_logo")
+        logoImageView.contentMode = .scaleAspectFit
+        logoImageView.translatesAutoresizingMaskIntoConstraints = false
+
+        headerView.addSubview(backButton)
+        headerView.addSubview(logoImageView)
+
+        NSLayoutConstraint.activate([
+            headerView.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor),
+            headerView.leadingAnchor.constraint(equalTo: view.leadingAnchor),
+            headerView.trailingAnchor.constraint(equalTo: view.trailingAnchor),
+            headerView.heightAnchor.constraint(equalToConstant: 56),
+
+            backButton.leadingAnchor.constraint(equalTo: headerView.leadingAnchor, constant: 16),
+            backButton.centerYAnchor.constraint(equalTo: headerView.centerYAnchor),
+
+            logoImageView.centerXAnchor.constraint(equalTo: headerView.centerXAnchor),
+            logoImageView.centerYAnchor.constraint(equalTo: headerView.centerYAnchor),
+            logoImageView.heightAnchor.constraint(equalToConstant: 28)
+        ])
+    }
+
+    @objc private func backTapped() {
+        navigationController?.popViewController(animated: true)
+    }
+
+    // MARK: - Overview
+    private func setupOverview() {
+        
+        overviewLabel.attributedText = AppStyle.headerTitle(
+            firstPart: "Project",
+            secondPart: "Overview"
+        )
+        overviewLabel.font = UIFont(name: "Montserrat-Bold", size: 24)
+        overviewLabel.translatesAutoresizingMaskIntoConstraints = false
+        view.addSubview(overviewLabel)
+
+        NSLayoutConstraint.activate([
+            overviewLabel.topAnchor.constraint(equalTo: headerView.bottomAnchor, constant: 16),
+            overviewLabel.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: 16)
+        ])
+    }
+
+    // MARK: - CollectionView
+    private func setupCollectionView() {
+        let layout = UICollectionViewFlowLayout()
+        layout.scrollDirection = .horizontal
+        layout.minimumLineSpacing = 16
+        layout.itemSize = CGSize(
+            width: view.bounds.width - 48,
+            height: 260
+        )
+
+        collectionView = UICollectionView(frame: .zero, collectionViewLayout: layout)
+        collectionView.backgroundColor = .clear
+        collectionView.isPagingEnabled = false   // ⚠️ IMPORTANT
+        collectionView.showsHorizontalScrollIndicator = false
+        collectionView.decelerationRate = .fast
+        collectionView.translatesAutoresizingMaskIntoConstraints = false
+
+        collectionView.register(
+            ProgressCardCell.self,
+            forCellWithReuseIdentifier: ProgressCardCell.identifier
+        )
+
+        collectionView.dataSource = self
+        collectionView.delegate = self
+
+        view.addSubview(collectionView)
+
+        NSLayoutConstraint.activate([
+            collectionView.topAnchor.constraint(equalTo: overviewLabel.bottomAnchor, constant: 16),
+            collectionView.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: 16),
+            collectionView.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -16),
+            collectionView.heightAnchor.constraint(equalToConstant: 280)
+        ])
+    }
+
+    // MARK: - Page Control
+    private func setupPageControl() {
+        pageControl.currentPage = 0
+        pageControl.currentPageIndicatorTintColor = .black
+        pageControl.pageIndicatorTintColor = .lightGray
+        pageControl.translatesAutoresizingMaskIntoConstraints = false
+
+        view.addSubview(pageControl)
+
+        NSLayoutConstraint.activate([
+            pageControl.topAnchor.constraint(equalTo: collectionView.bottomAnchor, constant: 8),
+            pageControl.centerXAnchor.constraint(equalTo: view.centerXAnchor)
+        ])
+    }
+
+    // MARK: - TableView
     private func setupTableView() {
         tableView.translatesAutoresizingMaskIntoConstraints = false
         tableView.backgroundColor = .clear
         tableView.separatorStyle = .none
-
         tableView.dataSource = self
         tableView.delegate = self
 
@@ -60,7 +175,7 @@ final class StageDetailViewController: UIViewController {
         view.addSubview(tableView)
 
         NSLayoutConstraint.activate([
-            tableView.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor),
+            tableView.topAnchor.constraint(equalTo: pageControl.bottomAnchor, constant: 16),
             tableView.leadingAnchor.constraint(equalTo: view.leadingAnchor),
             tableView.trailingAnchor.constraint(equalTo: view.trailingAnchor),
             tableView.bottomAnchor.constraint(equalTo: view.bottomAnchor)
@@ -72,72 +187,108 @@ final class StageDetailViewController: UIViewController {
         EstateService.shared.getStageDetails(
             estateId: estateId,
             stageId: stageId
-        ) { [weak self] (result: Result<StageDetailResponse, Error>) in
-            guard let self = self else { return }
-
-            switch result {
-            case .success(let response):
+        ) { [weak self] result in
+            guard let self else { return }
+            if case let .success(response) = result {
                 DispatchQueue.main.async {
-                    self.mapResponse(response)
+                    self.phases = response.phases
+                    self.selectedPhaseIndex = 0
+                    self.pageControl.numberOfPages = self.phases.count
+                    self.collectionView.reloadData()
+                    self.tableView.reloadData()
                 }
-            case .failure(let error):
-                print("Stage details error:", error)
             }
         }
     }
 
-    // MARK: - Mapping
-    private func mapResponse(_ response: StageDetailResponse) {
-        civilItems.removeAll()
-        registrationItems.removeAll()
-
-        for phase in response.phases {
-
-            let items: [TimelineItem] = phase.phaseWorkItems.map { work in
-                let status: TimelineStatus =
-                    work.isCompleted == true ? .completed : .pending
-
-                return TimelineItem(
-                    name: work.name,
-                    date: "",
-                    status: status
-                )
-            }
-
-            if phase.name.lowercased().contains("civil") {
-                civilItems = items
-
-                let progress = calculateProgress(items: phase.phaseWorkItems)
-                civilProgressView.setProgress(progress)
-
-            } else if phase.name.lowercased().contains("registration") {
-                registrationItems = items
-
-                let progress = calculateProgress(items: phase.phaseWorkItems)
-                registrationProgressView.setProgress(progress)
-            }
+    // MARK: - Phase Calculation
+    private func currentPhaseIndex() -> Int {
+        guard let layout = collectionView.collectionViewLayout as? UICollectionViewFlowLayout else {
+            return selectedPhaseIndex
         }
 
+        let itemWidth = layout.itemSize.width + layout.minimumLineSpacing
+        let rawIndex = collectionView.contentOffset.x / itemWidth
+        let index = Int(round(rawIndex))
+
+        return max(0, min(index, phases.count - 1))
+    }
+
+    private func applyPhaseChange() {
+        let index = currentPhaseIndex()
+        guard index != selectedPhaseIndex else { return }
+
+        selectedPhaseIndex = index
+        pageControl.currentPage = index
+        tableView.setContentOffset(.zero, animated: false)
         tableView.reloadData()
-    }
-
-    // MARK: - Progress Calculation
-    private func calculateProgress(items: [PhaseWorkItem]) -> CGFloat {
-        guard !items.isEmpty else { return 0 }
-        let completed = items.filter { $0.isCompleted == true }.count
-        return CGFloat(completed) / CGFloat(items.count)
     }
 }
 
-// MARK: - UITableViewDataSource
-extension StageDetailViewController: UITableViewDataSource {
+// MARK: - CollectionView
+extension StageDetailViewController: UICollectionViewDataSource, UICollectionViewDelegate {
 
-    func numberOfSections(in tableView: UITableView) -> Int {
-        return 2 // Civil + Registration
+    func collectionView(_ collectionView: UICollectionView, numberOfItemsInSection section: Int) -> Int {
+        return phases.count
     }
 
+    func collectionView(
+        _ collectionView: UICollectionView,
+        cellForItemAt indexPath: IndexPath
+    ) -> UICollectionViewCell {
+
+        let cell = collectionView.dequeueReusableCell(
+            withReuseIdentifier: ProgressCardCell.identifier,
+            for: indexPath
+        ) as! ProgressCardCell
+
+        let phase = phases[indexPath.item]
+        let progress = phase.phaseWorkItems.isEmpty
+            ? 0
+            : CGFloat(phase.phaseWorkItems.filter { $0.isCompleted == true }.count)
+              / CGFloat(phase.phaseWorkItems.count)
+
+        cell.configure(
+            leftTitle: "Start Date",
+            leftValue: "January, 2026",
+            stageNumber: "\(stageId)",
+            phaseName: phase.name,
+            progress: progress
+        )
+
+        return cell
+    }
+
+    func scrollViewDidEndDragging(_ scrollView: UIScrollView, willDecelerate decelerate: Bool) {
+        guard scrollView == collectionView, !decelerate else { return }
+        applyPhaseChange()
+    }
+
+    func scrollViewDidEndDecelerating(_ scrollView: UIScrollView) {
+        guard scrollView == collectionView else { return }
+        applyPhaseChange()
+    }
+
+    func scrollViewWillEndDragging(
+        _ scrollView: UIScrollView,
+        withVelocity velocity: CGPoint,
+        targetContentOffset: UnsafeMutablePointer<CGPoint>
+    ) {
+        guard scrollView == collectionView,
+              let layout = collectionView.collectionViewLayout as? UICollectionViewFlowLayout
+        else { return }
+
+        let itemWidth = layout.itemSize.width + layout.minimumLineSpacing
+        let index = round(targetContentOffset.pointee.x / itemWidth)
+        targetContentOffset.pointee.x = index * itemWidth
+    }
+}
+
+// MARK: - TableView
+extension StageDetailViewController: UITableViewDataSource, UITableViewDelegate {
+
     func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
-        return section == 0 ? civilItems.count : registrationItems.count
+        return phases[safe: selectedPhaseIndex]?.phaseWorkItems.count ?? 0
     }
 
     func tableView(
@@ -150,64 +301,26 @@ extension StageDetailViewController: UITableViewDataSource {
             for: indexPath
         ) as! TimelineCell
 
-        let item = indexPath.section == 0
-            ? civilItems[indexPath.row]
-            : registrationItems[indexPath.row]
+        let workItem = phases[selectedPhaseIndex].phaseWorkItems[indexPath.row]
+
+        let item = TimelineItem(
+            name: workItem.name,
+            date: "",
+            status: workItem.isCompleted == true ? .completed : .pending
+        )
 
         cell.configure(with: item)
         return cell
     }
+
+    func tableView(_ tableView: UITableView, heightForRowAt indexPath: IndexPath) -> CGFloat {
+        80
+    }
 }
 
-// MARK: - UITableViewDelegate
-extension StageDetailViewController: UITableViewDelegate {
-
-    func tableView(
-        _ tableView: UITableView,
-        viewForHeaderInSection section: Int
-    ) -> UIView? {
-
-        let container = UIView()
-        container.backgroundColor = .clear
-
-        let titleLabel = UILabel()
-        titleLabel.font = .boldSystemFont(ofSize: 18)
-        titleLabel.textColor = .label
-        titleLabel.translatesAutoresizingMaskIntoConstraints = false
-
-        let progressView = section == 0 ? civilProgressView : registrationProgressView
-        progressView.translatesAutoresizingMaskIntoConstraints = false
-
-        titleLabel.text = section == 0 ? "Civil Phase" : "Registration Phase"
-
-        container.addSubview(titleLabel)
-        container.addSubview(progressView)
-
-        NSLayoutConstraint.activate([
-            titleLabel.topAnchor.constraint(equalTo: container.topAnchor, constant: 12),
-            titleLabel.leadingAnchor.constraint(equalTo: container.leadingAnchor, constant: 16),
-
-            progressView.topAnchor.constraint(equalTo: titleLabel.bottomAnchor, constant: 12),
-            progressView.centerXAnchor.constraint(equalTo: container.centerXAnchor),
-            progressView.widthAnchor.constraint(equalToConstant: 120),
-            progressView.heightAnchor.constraint(equalToConstant: 120),
-            progressView.bottomAnchor.constraint(equalTo: container.bottomAnchor, constant: -12)
-        ])
-
-        return container
-    }
-
-    func tableView(
-        _ tableView: UITableView,
-        heightForHeaderInSection section: Int
-    ) -> CGFloat {
-        return 180
-    }
-
-    func tableView(
-        _ tableView: UITableView,
-        heightForRowAt indexPath: IndexPath
-    ) -> CGFloat {
-        return 80
+// MARK: - Safe Index
+extension Array {
+    subscript(safe index: Int) -> Element? {
+        indices.contains(index) ? self[index] : nil
     }
 }
