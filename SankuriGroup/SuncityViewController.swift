@@ -18,6 +18,7 @@ class SuncityViewController: UIViewController {
     // MARK: - Public
     var estateId: Int?
     private let sideMenu = SideMenuView()
+    private var sliderImageURLs: [String] = []
 
 
     // MARK: - Data
@@ -60,20 +61,25 @@ class SuncityViewController: UIViewController {
     // MARK: - Lifecycle
     override func viewDidLoad() {
         super.viewDidLoad()
+
         view.backgroundColor = AppStyle.Colors.bodyBackground
         navigationController?.setNavigationBarHidden(true, animated: false)
+
         sideMenu.delegate = self
-        
+
         setupScroll()
         setupUI()
-        setupSlider()
         setupPhaseBar()
+
+        fetchEstateBackgroundImages()
 
         guard let estateId else { return }
         fetchEstateDetails(id: estateId)
+
         menuButton.addTarget(self, action: #selector(menuTapped), for: .touchUpInside)
         homeButton.addTarget(self, action: #selector(homeTapped), for: .touchUpInside)
     }
+
 
     @objc private func menuTapped() {
         print("Menu tapped")
@@ -118,7 +124,7 @@ class SuncityViewController: UIViewController {
             case .success(let response):
 
                 // ✅ Save estate name
-                self.estateName = response.name ?? ""
+                self.estateName = response.name
 
                 // ✅ Update welcome label
                 self.updateWelcomeTitle()
@@ -140,6 +146,28 @@ class SuncityViewController: UIViewController {
         }
     }
 
+    private func fetchEstateBackgroundImages() {
+        EstateService.shared.fetchEstates { [weak self] result in
+            guard let self else { return }
+
+            switch result {
+            case .success(let estates):
+                guard let estateId = self.estateId else { return }
+
+                // Match selected estate
+                let selectedEstate = estates.first { $0.id == estateId }
+
+                if let url = selectedEstate?.backgroundImageURL, !url.isEmpty {
+                    self.sliderImageURLs = [url]
+                }
+
+                self.setupSlider()
+
+            case .failure(let error):
+                print("Failed to load background images:", error)
+            }
+        }
+    }
 
     // MARK: - UI Setup
     private func setupUI() {
@@ -233,23 +261,46 @@ class SuncityViewController: UIViewController {
 
     // MARK: - Slider
     private func setupSlider() {
+        sliderScrollView.subviews.forEach { $0.removeFromSuperview() }
+
         sliderScrollView.isPagingEnabled = true
         sliderScrollView.showsHorizontalScrollIndicator = false
 
-        let images = (1...5).compactMap { _ in UIImage(named: "site_image") }
-        sliderScrollView.contentSize = CGSize(width: view.frame.width * CGFloat(images.count), height: 180)
-        pageControl.numberOfPages = images.count
+        guard !sliderImageURLs.isEmpty else { return }
 
-        for (i, img) in images.enumerated() {
-            let iv = UIImageView(image: img)
-            iv.frame = CGRect(x: CGFloat(i) * view.frame.width, y: 0,
-                              width: view.frame.width, height: 180)
-            iv.layer.cornerRadius = 12
-            iv.clipsToBounds = true
-            iv.contentMode = .scaleAspectFill
-            sliderScrollView.addSubview(iv)
+        let width = view.frame.width - 40
+        let height: CGFloat = 180
+
+        sliderScrollView.contentSize = CGSize(
+            width: width * CGFloat(sliderImageURLs.count),
+            height: height
+        )
+
+        pageControl.numberOfPages = sliderImageURLs.count
+        pageControl.currentPage = 0
+
+        for (index, urlString) in sliderImageURLs.enumerated() {
+            let imageView = UIImageView()
+            imageView.frame = CGRect(
+                x: CGFloat(index) * width,
+                y: 0,
+                width: width,
+                height: height
+            )
+
+            imageView.layer.cornerRadius = 12
+            imageView.clipsToBounds = true
+            imageView.contentMode = .scaleAspectFill
+            imageView.backgroundColor = .lightGray
+
+            if let url = URL(string: urlString) {
+                imageView.loadImage(from: url)
+            }
+
+            sliderScrollView.addSubview(imageView)
         }
     }
+
 
     // MARK: - Stage Grid
     private func buildStageGrid() {
@@ -345,4 +396,16 @@ extension SuncityViewController: SideMenuDelegate {
         }
     }
 }
+
+extension UIImageView {
+    func loadImage(from url: URL) {
+        URLSession.shared.dataTask(with: url) { data, _, _ in
+            guard let data, let image = UIImage(data: data) else { return }
+            DispatchQueue.main.async {
+                self.image = image
+            }
+        }.resume()
+    }
+}
+
 

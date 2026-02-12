@@ -42,6 +42,17 @@ final class StageDetailViewController: UIViewController {
     required init?(coder: NSCoder) {
         fatalError("init(coder:) has not been implemented")
     }
+    
+    private let galleryButton: UIButton = {
+        let button = UIButton(type: .system)
+        button.setImage(UIImage(systemName: "photo.on.rectangle"), for: .normal)
+        button.tintColor = .black
+        return button
+    }()
+    
+    private var stageGalleryURLs: [String] = []
+
+
 
     // MARK: - Lifecycle
     override func viewDidLoad() {
@@ -54,6 +65,52 @@ final class StageDetailViewController: UIViewController {
         setupPageControl()
         setupTableView()
         fetchStageDetails()
+        setupGalleryButton()
+
+    }
+
+    private func setupGalleryButton() {
+        view.addSubview(galleryButton)
+
+        galleryButton.translatesAutoresizingMaskIntoConstraints = false
+        NSLayoutConstraint.activate([
+            galleryButton.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor, constant: 8),
+            galleryButton.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -16),
+            galleryButton.widthAnchor.constraint(equalToConstant: 32),
+            galleryButton.heightAnchor.constraint(equalToConstant: 32)
+        ])
+
+        galleryButton.addTarget(self, action: #selector(galleryTapped), for: .touchUpInside)
+    }
+
+    @objc private func galleryTapped() {
+        fetchStageGalleryImages()
+    }
+    
+    private func fetchStageGalleryImages() {
+        EstateService.shared.getStageGalleryImages(
+            estateId: estateId,
+            stageId: stageId
+        ) { [weak self] result in
+            guard let self else { return }
+
+            DispatchQueue.main.async {
+                switch result {
+                case .success(let images):
+                    self.stageGalleryURLs = images
+                        .map { $0.galleryURL }
+                        .filter { !$0.isEmpty }
+
+                    let vc = StageGalleryViewController()
+                    vc.imageURLs = self.stageGalleryURLs
+                    vc.stageId = self.stageId
+                    self.navigationController?.pushViewController(vc, animated: true)
+
+                case .failure(let error):
+                    print("Gallery API error:", error)
+                }
+            }
+        }
     }
 
     // MARK: - Header

@@ -12,13 +12,16 @@ struct Estate: Decodable {
     let id: Int
     let name: String
     let logoURL: String
+    let backgroundImageURL: String?
 
     enum CodingKeys: String, CodingKey {
         case id = "Id"
         case name = "Name"
         case logoURL = "LogoURL"
+        case backgroundImageURL = "BackgroundImageURL"
     }
 }
+
 
 // MARK: - Estate Details Models
 
@@ -31,6 +34,23 @@ struct EstateDetailsResponse: Decodable {
         case estateStages = "EstateStages"
     }
 }
+
+// MARK: - Stage Gallery Models
+
+struct StageGalleryImage: Decodable {
+    let id: Int
+    let galleryURL: String
+    let description: String?
+    let date: String?
+
+    enum CodingKeys: String, CodingKey {
+        case id = "Id"
+        case galleryURL = "GalleryURL"
+        case description
+        case date
+    }
+}
+
 
 struct EstateStage: Decodable {
     let stageId: Int
@@ -218,6 +238,33 @@ extension EstateService {
         }.resume()
     }
     
+
+    func getStageGalleryImages(
+        estateId: Int,
+        stageId: Int,
+        completion: @escaping (Result<[StageGalleryImage], Error>) -> Void
+    ) {
+        let urlString =
+        "https://sunkuri.azurewebsites.net/api/estate/GetStageGalleryImage/\(estateId)/\(stageId)"
+
+        guard let url = URL(string: urlString) else { return }
+
+        URLSession.shared.dataTask(with: url) { data, _, error in
+            if let error {
+                completion(.failure(error))
+                return
+            }
+
+            guard let data else { return }
+
+            do {
+                let response = try JSONDecoder().decode([StageGalleryImage].self, from: data)
+                completion(.success(response))
+            } catch {
+                completion(.failure(error))
+            }
+        }.resume()
+    }
 
 }
 
