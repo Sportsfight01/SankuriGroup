@@ -210,16 +210,23 @@ class HomeViewController: UIViewController {
     @objc private func handleEstateTap(_ sender: UITapGestureRecognizer) {
         guard let estateId = sender.view?.tag else { return }
 
-        print("Tapped estate id:", estateId)
+        // ✅ Find selected estate from list
+        guard let selectedEstate = estates.first(where: { $0.id == estateId }) else {
+            print("Estate not found for id:", estateId)
+            return
+        }
 
         let storyboard = UIStoryboard(name: "Main", bundle: nil)
         if let suncityVC = storyboard.instantiateViewController(
             withIdentifier: "SuncityViewController"
         ) as? SuncityViewController {
 
-            suncityVC.estateId = estateId   // 🔥 pass selected estate
+            suncityVC.estateId = selectedEstate.id
+            suncityVC.estateLogoURL = selectedEstate.logoURL   // ✅ PASS LOGO
+
             navigationController?.pushViewController(suncityVC, animated: true)
         }
     }
+
 }
 

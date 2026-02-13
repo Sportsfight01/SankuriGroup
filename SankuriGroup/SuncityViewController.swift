@@ -17,6 +17,8 @@ class SuncityViewController: UIViewController {
 
     // MARK: - Public
     var estateId: Int?
+    var estateLogoURL: String?
+
     private let sideMenu = SideMenuView()
     private var sliderImageURLs: [String] = []
 
@@ -70,7 +72,7 @@ class SuncityViewController: UIViewController {
         setupScroll()
         setupUI()
         setupPhaseBar()
-
+        updateHeaderImage()
         fetchEstateBackgroundImages()
 
         guard let estateId else { return }
@@ -78,6 +80,15 @@ class SuncityViewController: UIViewController {
 
         menuButton.addTarget(self, action: #selector(menuTapped), for: .touchUpInside)
         homeButton.addTarget(self, action: #selector(homeTapped), for: .touchUpInside)
+    }
+
+    private func updateHeaderImage() {
+        guard let logoURLString = estateLogoURL,
+              let url = URL(string: logoURLString) else {
+            return
+        }
+
+        logoImageView.loadImage(from: url)
     }
 
 
@@ -178,6 +189,9 @@ class SuncityViewController: UIViewController {
             $0.translatesAutoresizingMaskIntoConstraints = false
             contentView.addSubview($0)
         }
+        
+        logoImageView.contentMode = .scaleAspectFit
+        logoImageView.clipsToBounds = true
 
         menuButton.setImage(UIImage(systemName: "line.3.horizontal"), for: .normal)
         homeButton.setImage(UIImage(systemName: "house.fill"), for: .normal)
@@ -232,6 +246,7 @@ class SuncityViewController: UIViewController {
             stageGridStack.trailingAnchor.constraint(equalTo: contentView.trailingAnchor, constant: -20),
             stageGridStack.bottomAnchor.constraint(equalTo: contentView.bottomAnchor, constant: -40)
         ])
+        
     }
     
     private func updateWelcomeTitle() {
