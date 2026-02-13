@@ -14,17 +14,29 @@
 		A15CBCBA2ED442F9000E8E14 /* Exceptions for "SankuriGroup" folder in "SankuriGroup" target */ = {
 			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
 			membershipExceptions = (
+				estate_map.html,
 				Info.plist,
 			);
 			target = A140B0D62ED02E3B004119DC /* SankuriGroup */;
 		};
 /* End PBXFileSystemSynchronizedBuildFileExceptionSet section */
 
+/* Begin PBXFileSystemSynchronizedGroupBuildPhaseMembershipExceptionSet section */
+		6CDC3ADC2F3F3E3400428915 /* Exceptions for "SankuriGroup" folder in "Compile Sources" phase from "SankuriGroup" target */ = {
+			isa = PBXFileSystemSynchronizedGroupBuildPhaseMembershipExceptionSet;
+			buildPhase = A140B0D32ED02E3B004119DC /* Sources */;
+			membershipExceptions = (
+				estate_map.html,
+			);
+		};
+/* End PBXFileSystemSynchronizedGroupBuildPhaseMembershipExceptionSet section */
+
 /* Begin PBXFileSystemSynchronizedRootGroup section */
 		A15CBCB12ED442F8000E8E14 /* SankuriGroup */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
 			exceptions = (
 				A15CBCBA2ED442F9000E8E14 /* Exceptions for "SankuriGroup" folder in "SankuriGroup" target */,
+				6CDC3ADC2F3F3E3400428915 /* Exceptions for "SankuriGroup" folder in "Compile Sources" phase from "SankuriGroup" target */,
 			);
 			path = SankuriGroup;
 			sourceTree = "<group>";
