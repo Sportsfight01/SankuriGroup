@@ -10,6 +10,12 @@ import UIKit
 class StageGalleryViewController: UIViewController, UIScrollViewDelegate {
 
     var imageURLs: [String] = []
+    // MARK: - Info labels
+    private let dateLabel = UILabel()
+    private let descriptionLabel = UILabel()
+
+    // Data coming from API
+    var galleryItems: [StageGalleryItem] = []
     
     var stageId: Int = 0   // 👈 pass this from StageDetailViewController
 
@@ -24,6 +30,7 @@ class StageGalleryViewController: UIViewController, UIScrollViewDelegate {
     private let titleLabel = UILabel()
 
 
+
     override func viewDidLoad() {
         super.viewDidLoad()
 
@@ -31,7 +38,10 @@ class StageGalleryViewController: UIViewController, UIScrollViewDelegate {
 
         setupHeader()
         setupSlider()
-        startAutoScroll()
+        setupInfoSection()     // ✅ NEW
+
+        updateInfo(for: 0)    // ✅ NEW
+
     }
 
     
@@ -75,6 +85,36 @@ class StageGalleryViewController: UIViewController, UIScrollViewDelegate {
         navigationController?.popViewController(animated: true)
     }
 
+    private func setupInfoSection() {
+        descriptionLabel.font = .systemFont(ofSize: 16, weight: .medium)
+        descriptionLabel.textColor = .black
+        descriptionLabel.textAlignment = .center
+        descriptionLabel.numberOfLines = 0
+        
+        dateLabel.font = .systemFont(ofSize: 14)
+        dateLabel.textColor = .darkGray
+        dateLabel.textAlignment = .center
+
+        view.addSubview(descriptionLabel)
+        view.addSubview(dateLabel)
+
+        descriptionLabel.translatesAutoresizingMaskIntoConstraints = false
+        dateLabel.translatesAutoresizingMaskIntoConstraints = false
+
+        NSLayoutConstraint.activate([
+            
+            
+            descriptionLabel.topAnchor.constraint(equalTo: pageControl.bottomAnchor, constant: 12),
+            descriptionLabel.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: 16),
+            descriptionLabel.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -16),
+            
+            dateLabel.topAnchor.constraint(equalTo: descriptionLabel.bottomAnchor, constant: 6),
+            dateLabel.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: 16),
+            dateLabel.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -16)
+
+        ])
+    }
+
     
     private func setupSlider() {
         scrollView.isPagingEnabled = true
@@ -99,33 +139,53 @@ class StageGalleryViewController: UIViewController, UIScrollViewDelegate {
             pageControl.topAnchor.constraint(equalTo: scrollView.bottomAnchor, constant: 12),
             pageControl.centerXAnchor.constraint(equalTo: view.centerXAnchor)
         ])
-
-        loadImages()
     }
 
 
+    override func viewDidLayoutSubviews() {
+        super.viewDidLayoutSubviews()
+        setupImagesIfNeeded()
+    }
+    
+    private var didSetupImages = false
+
+    private func setupImagesIfNeeded() {
+        guard !didSetupImages else { return }
+        guard !galleryItems.isEmpty else { return }
+        guard scrollView.frame.width > 0 else { return }
+
+        didSetupImages = true
+        loadImages()
+        updateInfo(for: 0)
+        startAutoScroll()
+
+    }
+
     
     private func loadImages() {
-        guard !imageURLs.isEmpty else { return }
 
-        let width = view.frame.width - 32
-        let height: CGFloat = 220
+        scrollView.subviews.forEach { $0.removeFromSuperview() }
+
+        let width = scrollView.frame.width
+        let height = scrollView.frame.height
 
         scrollView.contentSize = CGSize(
-            width: width * CGFloat(imageURLs.count),
+            width: width * CGFloat(galleryItems.count),
             height: height
         )
 
-        pageControl.numberOfPages = imageURLs.count
+        pageControl.numberOfPages = galleryItems.count
         pageControl.currentPage = 0
 
-        for (index, urlString) in imageURLs.enumerated() {
-            let imageView = UIImageView()
-            imageView.frame = CGRect(
-                x: CGFloat(index) * width,
-                y: 0,
-                width: width,
-                height: height
+        for (index, item) in galleryItems.enumerated() {
+
+            let imageView = UIImageView(
+                frame: CGRect(
+                    x: CGFloat(index) * width,
+                    y: 0,
+                    width: width,
+                    height: height
+                )
             )
 
             imageView.contentMode = .scaleAspectFill
@@ -133,7 +193,7 @@ class StageGalleryViewController: UIViewController, UIScrollViewDelegate {
             imageView.layer.cornerRadius = 12
             imageView.backgroundColor = .lightGray
 
-            if let url = URL(string: urlString) {
+            if let url = URL(string: item.imageURL) {
                 imageView.loadImage(from: url)
             }
 
@@ -141,8 +201,35 @@ class StageGalleryViewController: UIViewController, UIScrollViewDelegate {
         }
     }
 
+
+    private func updateInfo(for index: Int) {
+        guard index < galleryItems.count else { return }
+
+        let item = galleryItems[index]
+        dateLabel.text = formatDate(item.date)
+        descriptionLabel.text = item.description
+    }
+
+    private func formatDate(_ dateString: String?) -> String {
+        guard let dateString else { return "" }
+
+        let inputFormatter = DateFormatter()
+        inputFormatter.dateFormat = "yyyy-MM-dd'T'HH:mm:ss"
+
+        let outputFormatter = DateFormatter()
+        outputFormatter.dateFormat = "dd MMM yyyy"
+
+        if let date = inputFormatter.date(from: dateString) {
+            return outputFormatter.string(from: date)
+        }
+
+        return ""
+    }
+
     private func startAutoScroll() {
-        guard imageURLs.count > 1 else { return }
+        guard galleryItems.count > 1 else { return }
+
+        autoScrollTimer?.invalidate()
 
         autoScrollTimer = Timer.scheduledTimer(
             timeInterval: 2.0,
@@ -151,6 +238,8 @@ class StageGalleryViewController: UIViewController, UIScrollViewDelegate {
             userInfo: nil,
             repeats: true
         )
+
+        RunLoop.main.add(autoScrollTimer!, forMode: .common)
     }
 
     @objc private func autoScroll() {
@@ -158,18 +247,24 @@ class StageGalleryViewController: UIViewController, UIScrollViewDelegate {
         guard pageWidth > 0 else { return }
 
         let currentPage = Int(scrollView.contentOffset.x / pageWidth)
-        let nextPage = (currentPage + 1) % imageURLs.count
+        let nextPage = (currentPage + 1) % galleryItems.count
 
         let offset = CGPoint(x: CGFloat(nextPage) * pageWidth, y: 0)
         scrollView.setContentOffset(offset, animated: true)
+
+        pageControl.currentPage = nextPage
+        updateInfo(for: nextPage)
     }
 
     func scrollViewDidEndDecelerating(_ scrollView: UIScrollView) {
         let width = scrollView.frame.width
         guard width > 0 else { return }
 
-        pageControl.currentPage = Int(scrollView.contentOffset.x / width)
+        let page = Int(scrollView.contentOffset.x / width)
+        pageControl.currentPage = page
+        updateInfo(for: page)
     }
+
 
 
 

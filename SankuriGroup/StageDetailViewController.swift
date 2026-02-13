@@ -8,7 +8,7 @@
 import UIKit
 
 final class StageDetailViewController: UIViewController {
-
+    
     // MARK: - Inputs
     private let estateId: Int
     private let stageId: Int
@@ -88,6 +88,7 @@ final class StageDetailViewController: UIViewController {
     }
     
     private func fetchStageGalleryImages() {
+
         EstateService.shared.getStageGalleryImages(
             estateId: estateId,
             stageId: stageId
@@ -96,22 +97,29 @@ final class StageDetailViewController: UIViewController {
 
             DispatchQueue.main.async {
                 switch result {
+
                 case .success(let images):
-                    self.stageGalleryURLs = images
-                        .map { $0.galleryURL }
-                        .filter { !$0.isEmpty }
+                    let items = images.map {
+                        StageGalleryItem(
+                            imageURL: $0.galleryURL,
+                            date: $0.date,
+                            description: $0.description
+                        )
+                    }
 
                     let vc = StageGalleryViewController()
-                    vc.imageURLs = self.stageGalleryURLs
+                    vc.galleryItems = items
                     vc.stageId = self.stageId
                     self.navigationController?.pushViewController(vc, animated: true)
 
+
                 case .failure(let error):
-                    print("Gallery API error:", error)
+                    print("Stage Gallery API Error:", error)
                 }
             }
         }
     }
+
 
     // MARK: - Header
     private func setupHeader() {
